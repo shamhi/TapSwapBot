@@ -112,7 +112,7 @@ class Tapper:
         async with aiohttp.ClientSession(headers=headers) as http_client:
             while True:
                 try:
-                    if time() - access_token_created_time >= 3 * 60 * 60:
+                    if time() - access_token_created_time >= 3600:
                         tg_web_data = await self.get_tg_web_data()
                         profile_data, access_token = await self.login(http_client=http_client, tg_web_data=tg_web_data)
 
