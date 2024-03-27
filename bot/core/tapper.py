@@ -156,7 +156,7 @@ class Tapper:
                     next_energy_level = player_data['energy_level'] + 1
                     next_charge_level = player_data['charge_level'] + 1
 
-                    logger.success(f"Successful tapped! | "
+                    logger.success(f"{self.session_name} | Successful tapped! | "
                                    f"Balance: <c>{balance}</c> (<g>+{calc_taps}</g>) | Total: <e>{total}</e>")
 
                     if active_turbo is False:
