@@ -64,7 +64,33 @@ class Tapper:
             logger.error(f"{self.session_name} | Unknown error while retrieving Access Token: {error}")
             await asyncio.sleep(delay=3)
 
-    async def send_taps(self, http_client: aiohttp.ClientSession, taps: int, balance: int):
+    async def apply_boost(self, http_client: aiohttp.ClientSession, boost_type: str) -> bool:
+        try:
+            response = await http_client.post(url='https://api.tapswap.ai/api/player/apply_boost',
+                                              json={'type': boost_type})
+            response.raise_for_status()
+
+            return True
+        except Exception as error:
+            logger.error(f"{self.session_name} | Unknown error when apply {boost_type} boost: {error}")
+            await asyncio.sleep(delay=3)
+
+            return False
+
+    async def upgrade_boost(self, http_client: aiohttp.ClientSession, boost_type: str) -> bool:
+        try:
+            response = await http_client.post(url='https://api.tapswap.ai/api/player/upgrade',
+                                              json={'type': boost_type})
+            response.raise_for_status()
+
+            return True
+        except Exception as error:
+            logger.error(f"{self.session_name} | Unknown error when upgrade {boost_type} boost: {error}")
+            await asyncio.sleep(delay=3)
+
+            return False
+
+    async def send_taps(self, http_client: aiohttp.ClientSession, taps: int):
         try:
             response = await http_client.post(url='https://api.tapswap.ai/api/player/submit_taps',
                                               json={'taps': taps, 'time': time()})
@@ -78,24 +104,11 @@ class Tapper:
             logger.error(f"{self.session_name} | Unknown error when tapping: {error}")
             await asyncio.sleep(delay=3)
 
-    async def apply_boost(self, http_client: aiohttp.ClientSession, boost_type: str):
-        try:
-            response = await http_client.post(url='https://api.tapswap.ai/api/player/apply_boost',
-                                              json={'type': boost_type})
-            response.raise_for_status()
-
-            return True
-        except Exception as error:
-            logger.error(f"{self.session_name} | Unknown error when tapping: {error}")
-            await asyncio.sleep(delay=3)
-
-            return False
-
     async def run(self):
         access_token_created_time = 0
         active_turbo = False
 
-        async with (aiohttp.ClientSession(headers=headers) as http_client):
+        async with aiohttp.ClientSession(headers=headers) as http_client:
             while True:
                 try:
                     if time() - access_token_created_time >= 3 * 60 * 60:
@@ -107,7 +120,20 @@ class Tapper:
 
                         access_token_created_time = time()
 
+                        tap_bot = profile_data['player']['tap_bot']
+                        if tap_bot:
+                            bot_earned = profile_data['bot_shares']
+
+                            logger.success(f"{self.session_name} | Tap bot earned +{bot_earned} coins!")
+
                         balance = profile_data['player']['shares']
+
+                        tap_prices = {index + 1: data['price'] for index, data in
+                                      enumerate(profile_data['conf']['tap_levels'])}
+                        energy_prices = {index + 1: data['price'] for index, data in
+                                         enumerate(profile_data['conf']['energy_levels'])}
+                        charge_prices = {index + 1: data['price'] for index, data in
+                                         enumerate(profile_data['conf']['charge_levels'])}
 
                     taps = randint(a=settings.RANDOM_TAPS_COUNT[0], b=settings.RANDOM_TAPS_COUNT[1])
 
@@ -115,17 +141,23 @@ class Tapper:
                         taps += 500
                         active_turbo = False
 
-                    player_data = await self.send_taps(http_client=http_client, taps=taps, balance=balance)
+                    player_data = await self.send_taps(http_client=http_client, taps=taps)
 
                     available_energy = player_data['energy']
                     new_balance = player_data['shares']
                     calc_taps = abs(new_balance - balance)
                     balance = new_balance
                     total = player_data['stat']['earned']
+
                     energy_boost_count = player_data['boost'][0]['cnt']
                     turbo_boost_count = player_data['boost'][1]['cnt']
 
-                    logger.success(f"Successful tapped! | Balance: {balance} (+{calc_taps}) | Total: {total}")
+                    next_tap_level = player_data['tap_level'] + 1
+                    next_energy_level = player_data['energy_level'] + 1
+                    next_charge_level = player_data['charge_level'] + 1
+
+                    logger.success(f"Successful tapped! | "
+                                   f"Balance: <c>{balance}</c> (<g>+{calc_taps}</g>) | Total: <e>{total}</e>")
 
                     if active_turbo is False:
                         if (energy_boost_count > 0
@@ -140,7 +172,7 @@ class Tapper:
 
                                 await asyncio.sleep(delay=1)
 
-                                continue
+                            continue
 
                         if turbo_boost_count > 0 and settings.APPLY_DAILY_TURBO is True:
                             logger.info(f"{self.session_name} | Sleep 5s before activating the daily turbo boost")
@@ -153,16 +185,52 @@ class Tapper:
                                 await asyncio.sleep(delay=1)
 
                                 active_turbo = True
-                                continue
+
+                            continue
+
+                        if balance > tap_prices[next_tap_level] and next_tap_level <= settings.MAX_TAP_LEVEL:
+                            logger.info(f"{self.session_name} | Sleep 5s before upgrade tap to {next_tap_level} lvl")
+                            await asyncio.sleep(delay=5)
+
+                            status = await self.upgrade_boost(http_client=http_client, boost_type="tap")
+                            if status is True:
+                                logger.success(f"{self.session_name} | Tap upgraded to {next_tap_level} lvl")
+
+                                await asyncio.sleep(delay=1)
+
+                            continue
+
+                        if balance > energy_prices[next_energy_level] and next_energy_level <= settings.MAX_ENERGY_LEVEL:
+                            logger.info(f"{self.session_name} | Sleep 5s before upgrade energy to {next_energy_level} lvl")
+                            await asyncio.sleep(delay=5)
+
+                            status = await self.upgrade_boost(http_client=http_client, boost_type="energy")
+                            if status is True:
+                                logger.success(f"{self.session_name} | Energy upgraded to {next_energy_level} lvl")
+
+                                await asyncio.sleep(delay=1)
+
+                            continue
+
+                        if balance > charge_prices[next_charge_level] and next_charge_level <= settings.MAX_CHARGE_LEVEL:
+                            logger.info(f"{self.session_name} | Sleep 5s before upgrade charge to {next_charge_level} lvl")
+                            await asyncio.sleep(delay=5)
+
+                            status = await self.upgrade_boost(http_client=http_client, boost_type="charge")
+                            if status is True:
+                                logger.success(f"{self.session_name} | Charge upgraded to {next_charge_level} lvl")
+
+                                await asyncio.sleep(delay=1)
+
+                            continue
 
                         if available_energy < settings.MIN_AVAILABLE_ENERGY:
-                            logger.info(f"{self.session_name} | Minimum energy reached: {settings.MIN_AVAILABLE_ENERGY}")
+                            logger.info(f"{self.session_name} | Minimum energy reached: {available_energy}")
                             logger.info(f"{self.session_name} | Sleep {settings.SLEEP_BY_MIN_ENERGY}s")
 
                             await asyncio.sleep(delay=settings.SLEEP_BY_MIN_ENERGY)
 
                             continue
-
 
                 except InvalidSession as error:
                     raise error
@@ -174,7 +242,7 @@ class Tapper:
                 else:
                     sleep_between_clicks = randint(a=settings.SLEEP_BETWEEN_TAP[0], b=settings.SLEEP_BETWEEN_TAP[1])
 
-                    if active_turbo:
+                    if active_turbo is True:
                         sleep_between_clicks = 4
 
                     logger.info(f"Sleep {sleep_between_clicks}s")
