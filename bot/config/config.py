@@ -7,23 +7,21 @@ class Settings(BaseSettings):
     API_ID: int
     API_HASH: str
 
-    MIN_AVAILABLE_COINS: int = 150
-    SLEEP_BY_MIN_COINS_TIME: int = 300
+    MIN_AVAILABLE_ENERGY: int = 100
+    SLEEP_BY_MIN_ENERGY: int = 200
 
-    AUTO_BUY_ENERGY_BOOST: bool = False
-    MAX_ENERGY_BOOST: int = 10
-    AUTO_BUY_SPEED_BOOST: bool = False
-    MAX_SPEED_BOOST: int = 10
-    AUTO_BUY_CLICK_BOOST: bool = False
-    MAX_CLICK_BOOST: int = 10
+    AUTO_UPGRADE_TAP: bool = True
+    MAX_TAP_LEVEL: int = 10
+    AUTO_UPGRADE_ENERGY: bool = True
+    MAX_ENERGY_LEVEL: int = 10
+    AUTO_UPGRADE_CHARGE: bool = True
+    MAX_CHARGE_LEVEL: int = 5
 
-    ACTIVATE_DAILY_ENERGY: bool = True
-    ACTIVATE_DAILY_TURBO: bool = True
+    APPLY_DAILY_ENERGY: bool = True
+    APPLY_DAILY_TURBO: bool = True
 
-    SLEEP_BY_MIN_COINS: bool = True
-
-    RANDOM_CLICKS_COUNT: list[int] = [50, 200]
-    SLEEP_BETWEEN_CLICK: list[int] = [10, 25]
+    RANDOM_TAPS_COUNT: list[int] = [50, 200]
+    SLEEP_BETWEEN_TAP: list[int] = [10, 25]
 
 
 settings = Settings()
