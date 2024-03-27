@@ -106,6 +106,7 @@ class Tapper:
 
     async def run(self):
         access_token_created_time = 0
+        turbo_time = 0
         active_turbo = False
 
         async with aiohttp.ClientSession(headers=headers) as http_client:
@@ -139,7 +140,9 @@ class Tapper:
 
                     if active_turbo:
                         taps += 500
-                        active_turbo = False
+                        if time() - turbo_time > 20:
+                            active_turbo = False
+                            turbo_time = 0
 
                     player_data = await self.send_taps(http_client=http_client, taps=taps)
 
@@ -185,6 +188,7 @@ class Tapper:
                                 await asyncio.sleep(delay=1)
 
                                 active_turbo = True
+                                turbo_time = time()
 
                             continue
 
