@@ -24,10 +24,10 @@
 | **SLEEP_BY_MIN_ENERGY**  | Задержка при достижении минимальной энергии в секундах (напр. 200)                          |
 | **AUTO_UPGRADE_TAP**     | Улучшать ли тап (True / False)                                                              |
 | **MAX_TAP_LEVEL**        | Максимальный уровень прокачки тапа (до 20)                                                  |
-| **AUTO_UPGRADE_ENERGY**  | Улучшать ли тап (True / False)                                                              |
-| **MAX_ENERGY_LEVEL**     | Максимальный уровень прокачки тапа (до 20)                                                  |
-| **AUTO_UPGRADE_CHARGE**  | Улучшать ли тап (True / False)                                                              |
-| **MAX_CHARGE_LEVEL**     | Максимальный уровень прокачки тапа (до 5)                                                   |
+| **AUTO_UPGRADE_ENERGY**  | Улучшать ли энергию (True / False)                                                          |
+| **MAX_ENERGY_LEVEL**     | Максимальный уровень прокачки энергии (до 20)                                               |
+| **AUTO_UPGRADE_CHARGE**  | Улучшать ли заряд энергии (True / False)                                                    |
+| **MAX_CHARGE_LEVEL**     | Максимальный уровень прокачки заряда энергии (до 5)                                         |
 | **APPLY_DAILY_ENERGY**   | Использовать ли ежедневный бесплатный буст энергии (True / False)                           |
 | **APPLY_DAILY_TURBO**    | Использовать ли ежедневный бесплатный буст турбо (True / False)                             |
 | **RANDOM_CLICKS_COUNT**  | Рандомное количество тапов (напр. 50,200)                                                   |
