@@ -192,7 +192,7 @@ class Tapper:
 
                             continue
 
-                        if balance > tap_prices[next_tap_level] and next_tap_level <= settings.MAX_TAP_LEVEL:
+                        if balance > tap_prices.get(next_tap_level, 0) and next_tap_level <= settings.MAX_TAP_LEVEL:
                             logger.info(f"{self.session_name} | Sleep 5s before upgrade tap to {next_tap_level} lvl")
                             await asyncio.sleep(delay=5)
 
@@ -204,7 +204,7 @@ class Tapper:
 
                             continue
 
-                        if balance > energy_prices[next_energy_level] and next_energy_level <= settings.MAX_ENERGY_LEVEL:
+                        if balance > energy_prices.get(next_energy_level, 0) and next_energy_level <= settings.MAX_ENERGY_LEVEL:
                             logger.info(f"{self.session_name} | Sleep 5s before upgrade energy to {next_energy_level} lvl")
                             await asyncio.sleep(delay=5)
 
@@ -216,7 +216,7 @@ class Tapper:
 
                             continue
 
-                        if balance > charge_prices[next_charge_level] and next_charge_level <= settings.MAX_CHARGE_LEVEL:
+                        if balance > charge_prices.get(next_charge_level, 0) and next_charge_level <= settings.MAX_CHARGE_LEVEL:
                             logger.info(f"{self.session_name} | Sleep 5s before upgrade charge to {next_charge_level} lvl")
                             await asyncio.sleep(delay=5)
 
