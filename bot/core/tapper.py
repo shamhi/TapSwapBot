@@ -19,7 +19,7 @@ class Tapper:
         self.session_name = tg_client.name
         self.tg_client = tg_client
 
-    async def get_tg_web_data(self):
+    async def get_tg_web_data(self) -> str:
         try:
             if not self.tg_client.is_connected:
                 try:
@@ -52,7 +52,7 @@ class Tapper:
             logger.error(f"{self.session_name} | Unknown error during authorization: {error}")
             await asyncio.sleep(delay=3)
 
-    async def login(self, http_client: aiohttp.ClientSession, tg_web_data: str):
+    async def login(self, http_client: aiohttp.ClientSession, tg_web_data: str) -> tuple[dict[str], str]:
         try:
             response = await http_client.post(url='https://api.tapswap.ai/api/account/login',
                                               json={"init_data": tg_web_data, "referrer": ""})
@@ -93,7 +93,7 @@ class Tapper:
 
             return False
 
-    async def send_taps(self, http_client: aiohttp.ClientSession, taps: int):
+    async def send_taps(self, http_client: aiohttp.ClientSession, taps: int) -> dict[str]:
         try:
             response = await http_client.post(url='https://api.tapswap.ai/api/player/submit_taps',
                                               json={'taps': taps, 'time': time()})
@@ -107,7 +107,7 @@ class Tapper:
             logger.error(f"{self.session_name} | Unknown error when tapping: {error}")
             await asyncio.sleep(delay=3)
 
-    async def run(self):
+    async def run(self) -> None:
         access_token_created_time = 0
         turbo_time = 0
         active_turbo = False
@@ -149,14 +149,17 @@ class Tapper:
 
                     player_data = await self.send_taps(http_client=http_client, taps=taps)
 
+                    if not player_data:
+                        continue
+
                     available_energy = player_data['energy']
                     new_balance = player_data['shares']
                     calc_taps = abs(new_balance - balance)
                     balance = new_balance
                     total = player_data['stat']['earned']
 
-                    energy_boost_count = player_data['boost'][0]['cnt']
                     turbo_boost_count = player_data['boost'][1]['cnt']
+                    energy_boost_count = player_data['boost'][0]['cnt']
 
                     next_tap_level = player_data['tap_level'] + 1
                     next_energy_level = player_data['energy_level'] + 1
