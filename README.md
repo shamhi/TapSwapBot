@@ -57,8 +57,8 @@
 ~/TapSwapBot >>> python -m venv venv
 ~/TapSwapBot >>> venv\Scripts\activate
 ~/TapSwapBot >>> pip install -r requirements.txt
-~/TapSwapBot >>> # Копируете содержимое .env-example
-~/TapSwapBot >>> # Создаете файл .env, в котором вставляете скопированные данные из .env-example и обязательно указываете ваши API_ID и API_HASH, остальное берется по умолчанию
+~/TapSwapBot >>> copy .env-example .env
+~/TapSwapBot >>> # Указываете ваши API_ID и API_HASH, остальное берется по умолчанию
 ~/TapSwapBot >>> python main.py
 ```
 
@@ -68,6 +68,6 @@
 # Или
 ~/TapSwapBot >>> python3 main.py -a (1/2)
 
-# 1 - Запускает регистратор сессии
-# 2 - Запускает бота
+# 1 - Создает сессию
+# 2 - Запускает кликер
 ```

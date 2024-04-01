@@ -31,7 +31,7 @@
 | **APPLY_DAILY_ENERGY**   | Whether to use the daily free energy boost (True / False)                              |
 | **APPLY_DAILY_TURBO**    | Whether to use the daily free turbo boost (True / False)                               |
 | **RANDOM_CLICKS_COUNT**  | Random number of taps (eg 50,200)                                                      |
-| **SLEEP_BETWEEN_TAP**    | Random delay between taps in seconds (eg 10.25)                                        |
+| **SLEEP_BETWEEN_TAP**    | Random delay between taps in seconds (eg 10,25)                                        |
 
 ## Installation
 You can download [**Repository**](https://github.com/shamhi/TapSwapBot) by cloning it to your system and installing the necessary dependencies:
@@ -55,8 +55,8 @@ You can download [**Repository**](https://github.com/shamhi/TapSwapBot) by cloni
 ~/TapSwapBot >>> python -m venv venv
 ~/TapSwapBot >>> venv\Scripts\activate
 ~/TapSwapBot >>> pip install -r requirements.txt
-~/TapSwapBot >>> # Copy the contents of .env-example
-~/TapSwapBot >>> # Create a .env file in which you paste the copied data from .env-example and be sure to indicate your API_ID and API_HASH, the rest is taken by default
+~/TapSwapBot >>> copy .env-example .env
+~/TapSwapBot >>> # Specify your API_ID and API_HASH, the rest is taken by default
 ~/TapSwapBot >>> python main.py
 ```
 
@@ -66,6 +66,6 @@ Also for quick launch you can use arguments, for example:
 # Or
 ~/TapSwapBot >>> python3 main.py -a (1/2)
 
-#1 - Starts the session logger
-#2 - Launches the bot
+#1 - Create session
+#2 - Run clicker
 ```
