@@ -142,7 +142,7 @@ class Tapper:
                     taps = randint(a=settings.RANDOM_TAPS_COUNT[0], b=settings.RANDOM_TAPS_COUNT[1])
 
                     if active_turbo:
-                        taps += 2500
+                        taps += settings.ADD_TAPS_ON_TURBO
                         if time() - turbo_time > 20:
                             active_turbo = False
                             turbo_time = 0
@@ -198,7 +198,9 @@ class Tapper:
 
                             continue
 
-                        if balance > tap_prices.get(next_tap_level, 0) and next_tap_level <= settings.MAX_TAP_LEVEL:
+                        if (settings.AUTO_UPGRADE_TAP is True
+                                and balance > tap_prices.get(next_tap_level, 0)
+                                and next_tap_level <= settings.MAX_TAP_LEVEL):
                             logger.info(f"{self.session_name} | Sleep 5s before upgrade tap to {next_tap_level} lvl")
                             await asyncio.sleep(delay=5)
 
@@ -210,8 +212,11 @@ class Tapper:
 
                             continue
 
-                        if balance > energy_prices.get(next_energy_level, 0) and next_energy_level <= settings.MAX_ENERGY_LEVEL:
-                            logger.info(f"{self.session_name} | Sleep 5s before upgrade energy to {next_energy_level} lvl")
+                        if (settings.AUTO_UPGRADE_ENERGY is True
+                                and balance > energy_prices.get(next_energy_level, 0)
+                                and next_energy_level <= settings.MAX_ENERGY_LEVEL):
+                            logger.info(
+                                f"{self.session_name} | Sleep 5s before upgrade energy to {next_energy_level} lvl")
                             await asyncio.sleep(delay=5)
 
                             status = await self.upgrade_boost(http_client=http_client, boost_type="energy")
@@ -222,8 +227,11 @@ class Tapper:
 
                             continue
 
-                        if balance > charge_prices.get(next_charge_level, 0) and next_charge_level <= settings.MAX_CHARGE_LEVEL:
-                            logger.info(f"{self.session_name} | Sleep 5s before upgrade charge to {next_charge_level} lvl")
+                        if (settings.AUTO_UPGRADE_CHARGE is True
+                                and balance > charge_prices.get(next_charge_level, 0)
+                                and next_charge_level <= settings.MAX_CHARGE_LEVEL):
+                            logger.info(
+                                f"{self.session_name} | Sleep 5s before upgrade charge to {next_charge_level} lvl")
                             await asyncio.sleep(delay=5)
 
                             status = await self.upgrade_boost(http_client=http_client, boost_type="charge")
