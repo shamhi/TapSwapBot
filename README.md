@@ -22,6 +22,7 @@
 | **API_ID / API_HASH**    | Данные платформы, с которой запускать сессию Telegram (сток - Android)                      |
 | **MIN_AVAILABLE_ENERGY** | Минимальное количество доступной энергии, при достижении которой будет задержка (напр. 100) |
 | **SLEEP_BY_MIN_ENERGY**  | Задержка при достижении минимальной энергии в секундах (напр. 200)                          |
+| **ADD_TAPS_ON_TURBO**    | Сколько тапов будет добавлено при активации турбо (напр. 2500)                              |
 | **AUTO_UPGRADE_TAP**     | Улучшать ли тап (True / False)                                                              |
 | **MAX_TAP_LEVEL**        | Максимальный уровень прокачки тапа (до 20)                                                  |
 | **AUTO_UPGRADE_ENERGY**  | Улучшать ли энергию (True / False)                                                          |
@@ -56,8 +57,8 @@
 ~/TapSwapBot >>> python -m venv venv
 ~/TapSwapBot >>> venv\Scripts\activate
 ~/TapSwapBot >>> pip install -r requirements.txt
-~/TapSwapBot >>> # Копируете содержимое .env-example
-~/TapSwapBot >>> # Создаете файл .env, в котором вставляете скопированные данные из .env-example и обязательно указываете ваши API_ID и API_HASH, остальное берется по умолчанию
+~/TapSwapBot >>> copy .env-example .env
+~/TapSwapBot >>> # Указываете ваши API_ID и API_HASH, остальное берется по умолчанию
 ~/TapSwapBot >>> python main.py
 ```
 
@@ -67,6 +68,6 @@
 # Или
 ~/TapSwapBot >>> python3 main.py -a (1/2)
 
-# 1 - Запускает регистратор сессии
-# 2 - Запускает бота
+# 1 - Создает сессию
+# 2 - Запускает кликер
 ```
