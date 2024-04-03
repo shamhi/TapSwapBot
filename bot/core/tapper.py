@@ -4,6 +4,8 @@ from random import randint
 from urllib.parse import unquote
 
 import aiohttp
+from aiohttp_proxy import ProxyConnector
+from better_proxy import Proxy
 from pyrogram import Client
 from pyrogram.errors import Unauthorized, UserDeactivated, AuthKeyUnregistered
 from pyrogram.raw.functions.messages import RequestWebView
@@ -19,7 +21,21 @@ class Tapper:
         self.session_name = tg_client.name
         self.tg_client = tg_client
 
-    async def get_tg_web_data(self) -> str:
+    async def get_tg_web_data(self, proxy: str | None) -> str:
+        if proxy:
+            proxy = Proxy.from_str(proxy)
+            proxy_dict = dict(
+                scheme=proxy.protocol,
+                hostname=proxy.host,
+                port=proxy.port,
+                username=proxy.login,
+                password=proxy.password
+            )
+        else:
+            proxy_dict = None
+
+        self.tg_client.proxy = proxy_dict
+
         try:
             if not self.tg_client.is_connected:
                 try:
@@ -49,7 +65,7 @@ class Tapper:
             raise error
 
         except Exception as error:
-            logger.error(f"{self.session_name} | Unknown error during authorization: {error}")
+            logger.error(f"{self.session_name} | Unknown error during Authorization: {error}")
             await asyncio.sleep(delay=3)
 
     async def login(self, http_client: aiohttp.ClientSession, tg_web_data: str) -> tuple[dict[str], str]:
@@ -64,7 +80,7 @@ class Tapper:
 
             return profile_data, access_token
         except Exception as error:
-            logger.error(f"{self.session_name} | Unknown error while retrieving Access Token: {error}")
+            logger.error(f"{self.session_name} | Unknown error while getting Access Token: {error}")
             await asyncio.sleep(delay=3)
 
     async def apply_boost(self, http_client: aiohttp.ClientSession, boost_type: str) -> bool:
@@ -75,7 +91,7 @@ class Tapper:
 
             return True
         except Exception as error:
-            logger.error(f"{self.session_name} | Unknown error when apply {boost_type} boost: {error}")
+            logger.error(f"{self.session_name} | Unknown error when Apply {boost_type} Boost: {error}")
             await asyncio.sleep(delay=3)
 
             return False
@@ -88,7 +104,7 @@ class Tapper:
 
             return True
         except Exception as error:
-            logger.error(f"{self.session_name} | Unknown error when upgrade {boost_type} boost: {error}")
+            logger.error(f"{self.session_name} | Unknown error when Upgrade {boost_type} Boost: {error}")
             await asyncio.sleep(delay=3)
 
             return False
@@ -104,19 +120,32 @@ class Tapper:
 
             return player_data
         except Exception as error:
-            logger.error(f"{self.session_name} | Unknown error when tapping: {error}")
+            logger.error(f"{self.session_name} | Unknown error when Tapping: {error}")
             await asyncio.sleep(delay=3)
 
-    async def run(self) -> None:
+    async def check_proxy(self, http_client: aiohttp.ClientSession, proxy: Proxy) -> None:
+        try:
+            response = await http_client.get(url='https://httpbin.org/ip', timeout=aiohttp.ClientTimeout(5))
+            ip = (await response.json()).get('origin')
+            logger.info(f"{self.session_name} | Proxy IP: {ip}")
+        except Exception as error:
+            logger.error(f"{self.session_name} | Proxy: {proxy} | Error: {error}")
+
+    async def run(self, proxy: str | None) -> None:
         access_token_created_time = 0
         turbo_time = 0
         active_turbo = False
 
-        async with aiohttp.ClientSession(headers=headers) as http_client:
+        proxy_conn = ProxyConnector().from_url(proxy) if proxy else None
+
+        async with aiohttp.ClientSession(headers=headers, connector=proxy_conn) as http_client:
+            if proxy:
+                await self.check_proxy(http_client=http_client, proxy=proxy)
+
             while True:
                 try:
                     if time() - access_token_created_time >= 3600:
-                        tg_web_data = await self.get_tg_web_data()
+                        tg_web_data = await self.get_tg_web_data(proxy=proxy)
                         profile_data, access_token = await self.login(http_client=http_client, tg_web_data=tg_web_data)
 
                         http_client.headers["Authorization"] = f"Bearer {access_token}"
@@ -267,8 +296,8 @@ class Tapper:
                     await asyncio.sleep(delay=sleep_between_clicks)
 
 
-async def run_tapper(tg_client: Client):
+async def run_tapper(tg_client: Client, proxy: str | None):
     try:
-        await Tapper(tg_client=tg_client).run()
+        await Tapper(tg_client=tg_client).run(proxy=proxy)
     except InvalidSession:
         logger.error(f"{tg_client.name} | Invalid Session")
