@@ -65,10 +65,11 @@
 
 Также для быстрого запуска вы можете использовать аргументы, например:
 ```shell
-~/TapSwapBot >>> python3 main.py --action (1/2)
+~/TapSwapBot >>> python3 main.py --action (1/2/3)
 # Или
-~/TapSwapBot >>> python3 main.py -a (1/2)
+~/TapSwapBot >>> python3 main.py -a (1/2/3)
 
 # 1 - Создает сессию
 # 2 - Запускает кликер
+# 3 - Запуск через Telegram
 ```

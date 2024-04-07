@@ -63,10 +63,11 @@ You can download [**Repository**](https://github.com/shamhi/TapSwapBot) by cloni
 
 Also for quick launch you can use arguments, for example:
 ```shell
-~/TapSwapBot >>> python3 main.py --action (1/2)
+~/TapSwapBot >>> python3 main.py --action (1/2/3)
 # Or
-~/TapSwapBot >>> python3 main.py -a (1/2)
+~/TapSwapBot >>> python3 main.py -a (1/2/3)
 
 #1 - Create session
 #2 - Run clicker
+#3 - Run via Telegram
 ```
