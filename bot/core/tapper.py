@@ -37,7 +37,10 @@ class Tapper:
         self.tg_client.proxy = proxy_dict
 
         try:
+            with_tg = True
+
             if not self.tg_client.is_connected:
+                with_tg = False
                 try:
                     await self.tg_client.connect()
                 except (Unauthorized, UserDeactivated, AuthKeyUnregistered):
@@ -56,7 +59,7 @@ class Tapper:
                 string=unquote(
                     string=auth_url.split('tgWebAppData=', maxsplit=1)[1].split('&tgWebAppVersion', maxsplit=1)[0]))
 
-            if self.tg_client.is_connected:
+            if with_tg is False:
                 await self.tg_client.disconnect()
 
             return tg_web_data
