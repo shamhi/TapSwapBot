@@ -112,6 +112,20 @@ class Tapper:
 
             return False
 
+
+    async def claim_reward(self, http_client: aiohttp.ClientSession, task_id: str) -> bool:
+        try:
+            response = await http_client.post(url='https://api.tapswap.ai/api/player/claim_reward',
+                                              json={'task_id': task_id})
+            response.raise_for_status()
+
+            return True
+        except Exception as error:
+            logger.error(f"{self.session_name} | Unknown error when Claim {task_id} Reward: {error}")
+            await asyncio.sleep(delay=3)
+
+            return False
+
     async def send_taps(self, http_client: aiohttp.ClientSession, taps: int) -> dict[str]:
         try:
             response = await http_client.post(url='https://api.tapswap.ai/api/player/submit_taps',
@@ -170,6 +184,18 @@ class Tapper:
                                          enumerate(profile_data['conf']['energy_levels'])}
                         charge_prices = {index + 1: data['price'] for index, data in
                                          enumerate(profile_data['conf']['charge_levels'])}
+
+                        claims = profile_data['player']['claims']
+                        if claims:
+                            for task_id in claims:
+                                logger.info(f"{self.session_name} | Sleep 5s before claim <m>{task_id}</m> reward")
+                                await asyncio.sleep(delay=5)
+
+                                status = await self.claim_reward(http_client=http_client, task_id=task_id)
+                                if status is True:
+                                    logger.success(f"{self.session_name} | Successfully claim <m>{task_id}</m> reward")
+
+                                    await asyncio.sleep(delay=1)
 
                     taps = randint(a=settings.RANDOM_TAPS_COUNT[0], b=settings.RANDOM_TAPS_COUNT[1])
 
