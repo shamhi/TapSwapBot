@@ -47,7 +47,7 @@
 ~ >>> cd TapSwapBot
 
 # Linux
-~/TapSwapBot >>> python3 -m venv venv
+~/TapSwapBot >>> python3 -m venv
 ~/TapSwapBot >>> source venv/bin/activate
 ~/TapSwapBot >>> pip3 install -r requirements.txt
 ~/TapSwapBot >>> cp .env-example .env
