@@ -247,6 +247,8 @@ class Tapper:
                 logger.success(f"{self.session_name} | Successful tapped! | "
                                f"Balance: <c>{balance}</c> (<g>+{calc_taps}</g>) | Total: <e>{total}</e>")
 
+                local_db[self.session_name]['Balance'] = balance
+
                 await save_log(
                     db_pool=self.db_pool,
                     phone=self.user_data.phone_number,
