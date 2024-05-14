@@ -26,7 +26,6 @@ Select an action:
     2. Run clicker
 """
 
-
 checked_sessions = []
 
 
