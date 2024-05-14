@@ -27,6 +27,9 @@ Select an action:
 """
 
 
+checked_sessions = []
+
+
 def get_session_names() -> list[str]:
     session_names = glob.glob('sessions/*.session')
     session_names = [os.path.splitext(os.path.basename(file))[0] for file in session_names]
@@ -57,21 +60,17 @@ def move_bad_sessions() -> None:
         file.write('')
 
 
-async def check_sessions(sessions: list[Client]) -> list[Client]:
-    checked_sessions = []
-    for session in sessions:
-        is_auth = await session.connect()
+async def check_sessions(session: Client) -> Client:
+    is_auth = await session.connect()
 
-        if is_auth is False:
-            with open('sessions/bad_sessions.txt', 'a') as file:
-                file.write(f"{session.name}.session\n")
+    if is_auth is False:
+        with open('sessions/bad_sessions.txt', 'a') as file:
+            file.write(f"{session.name}.session\n")
 
-            continue
+        return
 
-        checked_sessions.append(session)
-        await session.disconnect()
-
-    return checked_sessions
+    checked_sessions.append(session)
+    await session.disconnect()
 
 
 async def get_tg_clients() -> list[Client]:
@@ -93,7 +92,10 @@ async def get_tg_clients() -> list[Client]:
         plugins=dict(root='bot/plugins')
     ) for session_name in session_names if session_name not in bad_sessions]
 
-    tg_clients = await check_sessions(tg_clients)
+    check_tasks = [check_sessions(tg_client) for tg_client in tg_clients]
+
+    await asyncio.gather(*check_tasks)
+    tg_clients = checked_sessions
 
     return tg_clients
 
