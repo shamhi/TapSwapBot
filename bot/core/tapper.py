@@ -7,7 +7,7 @@ import aiohttp
 from aiohttp_proxy import ProxyConnector
 from better_proxy import Proxy
 from pyrogram import Client
-from pyrogram.errors import Unauthorized, UserDeactivated, AuthKeyUnregistered
+from pyrogram.errors import Unauthorized, UserDeactivated, AuthKeyUnregistered, FloodWait
 from pyrogram.raw.functions.messages import RequestWebView
 
 from bot.config import settings
@@ -46,9 +46,21 @@ class Tapper:
                 except (Unauthorized, UserDeactivated, AuthKeyUnregistered):
                     raise InvalidSession(self.session_name)
 
+            while True:
+                try:
+                    peer = await self.tg_client.resolve_peer('tapswap_bot')
+                    break
+                except FloodWait as fl:
+                    fls = fl.value
+
+                    logger.warning(f"{self.session_name} | FloodWait {fl}")
+                    logger.info(f"{self.session_name} | Sleep {fls}s")
+
+                    await asyncio.sleep(fls+3)
+
             web_view = await self.tg_client.invoke(RequestWebView(
-                peer=await self.tg_client.resolve_peer('tapswap_bot'),
-                bot=await self.tg_client.resolve_peer('tapswap_bot'),
+                peer=peer,
+                bot=peer,
                 platform='android',
                 from_bot_menu=False,
                 url='https://app.tapswap.ai/'
@@ -75,6 +87,7 @@ class Tapper:
         try:
             response = await http_client.post(url='https://api.tapswap.ai/api/account/login',
                                               json={"init_data": tg_web_data, "referrer": ""})
+            response_text = await response.text()
             response.raise_for_status()
 
             response_json = await response.json()
@@ -83,18 +96,21 @@ class Tapper:
 
             return profile_data, access_token
         except Exception as error:
-            logger.error(f"{self.session_name} | Unknown error while getting Access Token: {error}")
+            logger.error(f"{self.session_name} | Unknown error while getting Access Token: {error} | "
+                         f"Response text: {response_text}")
             await asyncio.sleep(delay=3)
 
     async def apply_boost(self, http_client: aiohttp.ClientSession, boost_type: str) -> bool:
         try:
             response = await http_client.post(url='https://api.tapswap.ai/api/player/apply_boost',
                                               json={'type': boost_type})
+            response_text = await response.text()
             response.raise_for_status()
 
             return True
         except Exception as error:
-            logger.error(f"{self.session_name} | Unknown error when Apply {boost_type} Boost: {error}")
+            logger.error(f"{self.session_name} | Unknown error when Apply {boost_type} Boost: {error} | "
+                         f"Response text: {response_text}")
             await asyncio.sleep(delay=3)
 
             return False
@@ -103,11 +119,13 @@ class Tapper:
         try:
             response = await http_client.post(url='https://api.tapswap.ai/api/player/upgrade',
                                               json={'type': boost_type})
+            response_text = await response.text()
             response.raise_for_status()
 
             return True
         except Exception as error:
-            logger.error(f"{self.session_name} | Unknown error when Upgrade {boost_type} Boost: {error}")
+            logger.error(f"{self.session_name} | Unknown error when Upgrade {boost_type} Boost: {error} | "
+                         f"Response text: {response_text}")
             await asyncio.sleep(delay=3)
 
             return False
@@ -117,11 +135,13 @@ class Tapper:
         try:
             response = await http_client.post(url='https://api.tapswap.ai/api/player/claim_reward',
                                               json={'task_id': task_id})
+            response_text = await response.text()
             response.raise_for_status()
 
             return True
         except Exception as error:
-            logger.error(f"{self.session_name} | Unknown error when Claim {task_id} Reward: {error}")
+            logger.error(f"{self.session_name} | Unknown error when Claim {task_id} Reward: {error} | "
+                         f"Response text: {response_text}")
             await asyncio.sleep(delay=3)
 
             return False
@@ -130,6 +150,7 @@ class Tapper:
         try:
             response = await http_client.post(url='https://api.tapswap.ai/api/player/submit_taps',
                                               json={'taps': taps, 'time': time()})
+            response_text = await response.text()
             response.raise_for_status()
 
             response_json = await response.json()
@@ -137,7 +158,8 @@ class Tapper:
 
             return player_data
         except Exception as error:
-            logger.error(f"{self.session_name} | Unknown error when Tapping: {error}")
+            logger.error(f"{self.session_name} | Unknown error when Tapping: {error} | "
+                         f"Response text: {response_text}")
             await asyncio.sleep(delay=3)
 
     async def check_proxy(self, http_client: aiohttp.ClientSession, proxy: Proxy) -> None:
@@ -159,14 +181,17 @@ class Tapper:
             if proxy:
                 await self.check_proxy(http_client=http_client, proxy=proxy)
 
+            tg_web_data = await self.get_tg_web_data(proxy=proxy)
+
             while True:
                 try:
-                    if time() - access_token_created_time >= 3600:
-                        tg_web_data = await self.get_tg_web_data(proxy=proxy)
+                    if time() - access_token_created_time >= 1800:
                         profile_data, access_token = await self.login(http_client=http_client, tg_web_data=tg_web_data)
 
+                        if not access_token:
+                            continue
+
                         http_client.headers["Authorization"] = f"Bearer {access_token}"
-                        headers["Authorization"] = f"Bearer {access_token}"
 
                         access_token_created_time = time()
 
