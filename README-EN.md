@@ -30,9 +30,22 @@
 | **MAX_CHARGE_LEVEL**     | Maximum level of charge pumping (up to 5)                                              |
 | **APPLY_DAILY_ENERGY**   | Whether to use the daily free energy boost (True / False)                              |
 | **APPLY_DAILY_TURBO**    | Whether to use the daily free turbo boost (True / False)                               |
-| **RANDOM_CLICKS_COUNT**  | Random number of taps (eg 50,200)                                                      |
-| **SLEEP_BETWEEN_TAP**    | Random delay between taps in seconds (eg 10,25)                                        |
+| **RANDOM_CLICKS_COUNT**  | Random number of taps (eg [50,200])                                                    |
+| **SLEEP_BETWEEN_TAP**    | Random delay between taps in seconds (eg [10,25])                                      |
 | **USE_PROXY_FROM_FILE**  | Whether to use proxy from the `bot/config/proxies.txt` file (True / False)             |
+
+## Quick Start 📚
+1. To install libraries on Windows click on `INSTALL.bat`.
+2. To start the bot use `START.bat` (or in console: `python main.py`).
+
+## Prerequisites
+Before you begin, ensure you have the following installed:
+- [Python](https://www.python.org/downloads/) version 3.10 or 3.11
+
+## Obtaining API Keys
+1. Go to [my.telegram.org](https://my.telegram.org) and log in using your phone number.
+2. Select **"API development tools"** and fill out the form to register a new application.
+3. Note down the `API_ID` and `API_HASH` in `.env` file provided after registering your application.
 
 ## Installation
 You can download [**Repository**](https://github.com/shamhi/TapSwapBot) by cloning it to your system and installing the necessary dependencies:
