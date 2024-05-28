@@ -136,8 +136,14 @@ class Tapper:
 
     async def send_taps(self, http_client: aiohttp.ClientSession, taps: int) -> dict[str]:
         try:
+            timestamp = int(time() * 1000)
+            user_id = self.user_data.id
+            content_id = int((timestamp * user_id * user_id / user_id) % user_id % user_id)
+
+            http_client.headers['Content-Id'] = str(content_id)
+
             response = await http_client.post(url='https://api.tapswap.ai/api/player/submit_taps',
-                                              json={'taps': taps, 'time': time()})
+                                              json={'taps': taps, 'time': timestamp})
             response.raise_for_status()
 
             response_json = await response.json()
