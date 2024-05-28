@@ -20,6 +20,7 @@ class Tapper:
     def __init__(self, tg_client: Client):
         self.session_name = tg_client.name
         self.tg_client = tg_client
+        self.user_id = 0
 
     async def get_tg_web_data(self, proxy: str | None) -> str:
         if proxy:
@@ -70,6 +71,8 @@ class Tapper:
             tg_web_data = unquote(
                 string=unquote(
                     string=auth_url.split('tgWebAppData=', maxsplit=1)[1].split('&tgWebAppVersion', maxsplit=1)[0]))
+
+            self.user_id = (await self.tg_client.get_me()).id
 
             if with_tg is False:
                 await self.tg_client.disconnect()
@@ -148,8 +151,13 @@ class Tapper:
 
     async def send_taps(self, http_client: aiohttp.ClientSession, taps: int) -> dict[str]:
         try:
+            timestamp = int(time() * 1000)
+            content_id = int((timestamp * self.user_id * self.user_id / self.user_id) % self.user_id % self.user_id)
+
+            http_client.headers['Content-Id'] = str(content_id)
+
             response = await http_client.post(url='https://api.tapswap.ai/api/player/submit_taps',
-                                              json={'taps': taps, 'time': time()})
+                                              json={'taps': taps, 'time': timestamp})
             response_text = await response.text()
             response.raise_for_status()
 
