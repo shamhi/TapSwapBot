@@ -185,7 +185,7 @@ class Tapper:
 
         proxy_conn = ProxyConnector().from_url(proxy) if proxy else None
 
-        async with aiohttp.ClientSession(headers=headers, connector=proxy_conn) as http_client:
+        async with CloudflareScraper(headers=headers, timeout=aiohttp.ClientTimeout(total=60)) as http_client::
             if proxy:
                 await self.check_proxy(http_client=http_client, proxy=proxy)
 
