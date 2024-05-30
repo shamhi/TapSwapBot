@@ -1,4 +1,7 @@
-[<img src="https://img.shields.io/badge/Telegram-%40Me-orange">](https://t.me/sho6ot)
+[![Join our Telegram](https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/hidden_coding)
+
+Спасибо за идею:
+[<img src="https://img.shields.io/badge/Telegram-%40shamhi-orange">](https://t.me/sho6ot)
 
 
 ![img1](.github/images/demo.png)
