@@ -30,3 +30,16 @@ class Logs(Base):
     botName = Column(VARCHAR(50), nullable=True, default=None)
     status = Column(VARCHAR(50), nullable=True, default=None)
     amount = Column(VARCHAR(20), nullable=True, default=None)
+
+
+class NextTimes(Base):
+    __tablename__ = 'next_times'
+
+    id = Column(Integer, primary_key=True, nullable=False)
+
+    account__ID = Column(BigInteger, ForeignKey("accounts.number"), nullable=False)
+
+    tap = Column(BigInteger, nullable=True, default=None)
+    claim = Column(BigInteger, nullable=True, default=None)
+
+    botName = Column(VARCHAR(50), nullable=True, default=None)

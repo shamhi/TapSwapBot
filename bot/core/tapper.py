@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 from bot.config import settings
 from bot.utils import logger
 from bot.exceptions import InvalidSession
-from db.functions import get_user_proxy, get_user_agent, save_log
+from db.functions import get_user_proxy, get_user_agent, save_log, get_tap_time, set_tap_time
 from .headers import headers
 
 
@@ -173,6 +173,12 @@ class Tapper:
         errors_count = 0
 
         proxy_conn = ProxyConnector().from_url(proxy) if proxy else None
+
+        tap_time = await get_tap_time(db_pool=self.db_pool, phone_number=self.user_data.phone_number)
+
+        if time() < tap_time:
+            logger.info(f"{self.session_name} | Next tap in <y>{tap_time - time()}s</y> | Next sessions pack")
+            return
 
         user_agent = await get_user_agent(db_pool=self.db_pool, phone_number=self.user_data.phone_number)
         headers['User-Agent'] = user_agent
@@ -377,6 +383,10 @@ class Tapper:
                                 continue
 
                         if available_energy < settings.MIN_AVAILABLE_ENERGY:
+                            await set_tap_time(db_pool=self.db_pool,
+                                               phone_number=self.user_data.phone_number,
+                                               timestamp=time() + settings.ADD_SECONDS_TO_NEXT_TAP)
+
                             logger.info(f"{self.session_name} | Minimum energy reached: {available_energy}")
                             logger.info(f"{self.session_name} | Next sessions pack")
 
