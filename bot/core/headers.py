@@ -13,5 +13,5 @@ headers = {
     'Sec-Ch-Ua-Mobile': '?1',
     'Sec-Ch-Ua-Platform': '"Android"',
     'X-App': 'tapswap_server',
-    'X-Cv': '607',
+    'X-Cv': '608',
 }

@@ -4,6 +4,7 @@ from random import randint
 from urllib.parse import unquote
 
 import aiohttp
+from aiocfscrape import CloudflareScraper
 from aiohttp_proxy import ProxyConnector
 from better_proxy import Proxy
 from pyrogram import Client
@@ -57,7 +58,7 @@ class Tapper:
                     logger.warning(f"{self.session_name} | FloodWait {fl}")
                     logger.info(f"{self.session_name} | Sleep {fls}s")
 
-                    await asyncio.sleep(fls+3)
+                    await asyncio.sleep(fls + 3)
 
             web_view = await self.tg_client.invoke(RequestWebView(
                 peer=peer,
@@ -133,7 +134,6 @@ class Tapper:
 
             return False
 
-
     async def claim_reward(self, http_client: aiohttp.ClientSession, task_id: str) -> bool:
         try:
             response = await http_client.post(url='https://api.tapswap.ai/api/player/claim_reward',
@@ -185,7 +185,7 @@ class Tapper:
 
         proxy_conn = ProxyConnector().from_url(proxy) if proxy else None
 
-        async with aiohttp.ClientSession(headers=headers, connector=proxy_conn) as http_client:
+        async with CloudflareScraper(headers=headers, connector=proxy_conn) as http_client:
             if proxy:
                 await self.check_proxy(http_client=http_client, proxy=proxy)
 
