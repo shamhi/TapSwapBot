@@ -4,6 +4,7 @@ from random import randint
 from urllib.parse import unquote
 
 import aiohttp
+from aiocfscrape import CloudflareScraper
 from aiohttp_proxy import ProxyConnector
 from better_proxy import Proxy
 from pyrogram import Client
@@ -183,7 +184,7 @@ class Tapper:
         user_agent = await get_user_agent(db_pool=self.db_pool, phone_number=self.user_data.phone_number)
         headers['User-Agent'] = user_agent
 
-        async with aiohttp.ClientSession(headers=headers, connector=proxy_conn) as http_client:
+        async with CloudflareScraper(headers=headers, connector=proxy_conn) as http_client:
             if proxy:
                 status = await self.check_proxy(http_client=http_client, proxy=proxy)
                 if status is not True:
