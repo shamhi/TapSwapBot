@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from bot.config import settings
 from bot.utils import logger
+from bot.utils.scripts import extract_chq
 from bot.exceptions import InvalidSession
 from db.functions import get_user_proxy, get_user_agent, save_log, get_tap_time, set_tap_time
 from .headers import headers
@@ -87,6 +88,17 @@ class Tapper:
             response.raise_for_status()
 
             response_json = await response.json()
+            chq = response_json.get('chq')
+            if chq:
+                chq_result = extract_chq(chq=chq)
+
+                response = await http_client.post(url='https://api.tapswap.ai/api/account/login',
+                                                  json={"chr": chq_result, "init_data": tg_web_data, "referrer": ""})
+                response_text = await response.text()
+                response.raise_for_status()
+
+                response_json = await response.json()
+
             access_token = response_json['access_token']
             profile_data = response_json
 
@@ -120,7 +132,6 @@ class Tapper:
             await asyncio.sleep(delay=3)
 
             return False
-
 
     async def claim_reward(self, http_client: aiohttp.ClientSession, task_id: str) -> bool:
         try:
