@@ -16,23 +16,23 @@
 | Support tdata / pyrogram .session / telethon .session          |     ✅     |
 
 ## [Settings](https://github.com/shamhi/TapSwapBot/blob/main/.env-example)
-| Настройка                | Описание                                                                               |
-|--------------------------|----------------------------------------------------------------------------------------|
-| **API_ID / API_HASH**    | Platform data from which to launch a Telegram session (stock - Android)                |
-| **MIN_AVAILABLE_ENERGY** | Minimum amount of available energy, upon reaching which there will be a delay (eg 100) |
-| **SLEEP_BY_MIN_ENERGY**  | Delay when reaching minimum energy in seconds (eg 200)                                 |
-| **ADD_TAPS_ON_TURBO**    | How many taps will be added when turbo is activated (eg 2500)                          |
-| **AUTO_UPGRADE_TAP**     | Should I improve the tap (True / False)                                                |
-| **MAX_TAP_LEVEL**        | Maximum level of tap pumping (up to 20)                                                |
-| **AUTO_UPGRADE_ENERGY**  | Should I improve the energy (True / False)                                             |
-| **MAX_ENERGY_LEVEL**     | Maximum level of energy pumping (up to 20)                                             |
-| **AUTO_UPGRADE_CHARGE**  | Should I improve the charge (True / False)                                             |
-| **MAX_CHARGE_LEVEL**     | Maximum level of charge pumping (up to 5)                                              |
-| **APPLY_DAILY_ENERGY**   | Whether to use the daily free energy boost (True / False)                              |
-| **APPLY_DAILY_TURBO**    | Whether to use the daily free turbo boost (True / False)                               |
-| **RANDOM_CLICKS_COUNT**  | Random number of taps (eg [50,200])                                                    |
-| **SLEEP_BETWEEN_TAP**    | Random delay between taps in seconds (eg [10,25])                                      |
-| **USE_PROXY_FROM_FILE**  | Whether to use proxy from the `bot/config/proxies.txt` file (True / False)             |
+| Настройка                | Описание                                                                                 |
+|--------------------------|------------------------------------------------------------------------------------------|
+| **API_ID / API_HASH**    | Platform data from which to launch a Telegram session _(stock - Android)_                |
+| **MIN_AVAILABLE_ENERGY** | Minimum amount of available energy, upon reaching which there will be a delay _(eg 100)_ |
+| **SLEEP_BY_MIN_ENERGY**  | Delay when reaching minimum energy in seconds _(eg [1800,2400])_                         |
+| **ADD_TAPS_ON_TURBO**    | How many taps will be added when turbo is activated _(eg 2500)_                          |
+| **AUTO_UPGRADE_TAP**     | Should I improve the tap _(True / False)_                                                |
+| **MAX_TAP_LEVEL**        | Maximum level of tap pumping _(up to 20)_                                                |
+| **AUTO_UPGRADE_ENERGY**  | Should I improve the energy _(True / False)_                                             |
+| **MAX_ENERGY_LEVEL**     | Maximum level of energy pumping _(up to 20)_                                             |
+| **AUTO_UPGRADE_CHARGE**  | Should I improve the charge _(True / False)_                                             |
+| **MAX_CHARGE_LEVEL**     | Maximum level of charge pumping _(up to 5)_                                              |
+| **APPLY_DAILY_ENERGY**   | Whether to use the daily free energy boost _(True / False)_                              |
+| **APPLY_DAILY_TURBO**    | Whether to use the daily free turbo boost (_True / False)_                               |
+| **RANDOM_CLICKS_COUNT**  | Random number of taps _(eg [50,200])_                                                    |
+| **SLEEP_BETWEEN_TAP**    | Random delay between taps in seconds _(eg [10,25])_                                      |
+| **USE_PROXY_FROM_FILE**  | Whether to use proxy from the `bot/config/proxies.txt` file _(True / False)_             |
 
 ## Quick Start 📚
 1. To install libraries on Windows click on `INSTALL.bat`.
