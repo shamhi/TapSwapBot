@@ -353,7 +353,8 @@ class Tapper:
 
                     if available_energy < settings.MIN_AVAILABLE_ENERGY:
                         await http_client.close()
-                        proxy_conn.close()
+                        if proxy_conn:
+                            proxy_conn.close()
 
                         random_sleep = randint(settings.SLEEP_BY_MIN_ENERGY[0], settings.SLEEP_BY_MIN_ENERGY[1])
 
