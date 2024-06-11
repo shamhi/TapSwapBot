@@ -1,3 +1,4 @@
+import re
 import asyncio
 from typing import Union
 
@@ -84,28 +85,28 @@ def extract_chq(chq: str) -> int:
         bytes_array[i // 2] = int(chq[i:i + 2], 16)
 
     xor_bytes = bytearray(t ^ xor_key for t in bytes_array)
-    decoded_xor = xor_bytes.decode('utf-8')
+    decoded_xor = xor_bytes.decode('unicode_escape')
 
-    js_code = (decoded_xor.split('try {eval("document.getElementById");} catch {return 0xC0FEBABE;}')[1].split('})')[0]
-               .strip())
-
-    html = js_code.split('rt["inner" + "HTM" + "L"] = ')[1].split('\n')[0]
+    html = re.search(r'innerHTML.+?=(.+?);', decoded_xor, re.DOTALL | re.I | re.M).group(1).strip()
+    html = re.sub(r"\'\+\'", "", html, flags=re.M | re.I)
     soup = BeautifulSoup(html, 'html.parser')
 
     div_elements = soup.find_all('div')
     codes = {}
     for div in div_elements:
-        if 'id' in div.attrs and '_d_' in div.attrs:
-            codes[div['id']] = div['_d_']
+        if 'id' in div.attrs and '_v' in div.attrs:
+            codes[div['id']] = div['_v']
 
-    va = None
-    vb = None
-    for k, v in codes.items():
-        if k in js_code.split('\n')[5]:
-            va = v
-        if k in js_code.split('\n')[6]:
-            vb = v
+    va = re.search(r'''var(?:\s+)?i(?:\s+)?=.+?\([\'\"](\w+)[\'\"]\).+?,''', decoded_xor, flags=re.M | re.I).group(1)
+    vb = re.search(r'''\,(?:\s+)?j(?:\s+)?=.+?\([\'\"](\w+)[\'\"]\).+?,''', decoded_xor, flags=re.M | re.I).group(1)
+    r = re.search(r'''k(?:\s+)?%=(?:\s+)?(\w+)''', decoded_xor, flags=re.M | re.I).group(1)
 
-    code_to_execute = js_code.split('return ')[1].split(';')[0].replace('va', va).replace('vb', vb)
+    i = int(codes[va])
+    j = int(codes[vb])
+    k = int(i)
 
-    return eval(code_to_execute)
+    k *= k
+    k *= j
+    k %= int(r, 16)
+
+    return k
