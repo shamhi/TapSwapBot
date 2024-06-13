@@ -58,7 +58,7 @@ webdriver_path = next(pathlib.Path("webdriver").iterdir()).as_posix()
 
 options = web_options()
 options.add_argument("--headless")
-driver = web_driver(service=web_service(webdriver_path), options=options)
+driver = None
 
 session_queue = Queue()
 
@@ -126,6 +126,11 @@ def escape_html(text: str) -> str:
 
 
 def extract_chq(chq: str) -> int:
+    global driver
+
+    if driver is None:
+        driver = web_driver(service=web_service(webdriver_path), options=options)
+
     chq_length = len(chq)
 
     bytes_array = bytearray(chq_length // 2)
@@ -158,6 +163,10 @@ def extract_chq(chq: str) -> int:
     if len(get_session_names()) == session_queue.qsize():
         logger.info("All sessions are closed. Quitting driver...")
         driver.quit()
+        driver = None
+
+        while session_queue.qsize() > 0:
+            session_queue.get()
 
     return k
 
