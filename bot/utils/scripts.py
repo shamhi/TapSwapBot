@@ -32,7 +32,7 @@ else:
     web_manager = ChromeDriverManager
 
 
-if not pathlib.Path("webdriver").exists():
+if not pathlib.Path("webdriver").exists() or len(list(pathlib.Path("webdriver").iterdir())) == 0:
     logger.info("Downloading webdriver. It may take some time...")
     pathlib.Path("webdriver").mkdir(parents=True)
     webdriver_path = pathlib.Path(web_manager().install())
