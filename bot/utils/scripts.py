@@ -22,6 +22,7 @@ if os.name == "posix":
     web_options = FirefoxOptions
     web_service = FirefoxService
     web_manager = GeckoDriverManager
+    web_driver = webdriver.Firefox
 else:
     from selenium.webdriver.chrome.service import Service as ChromeService
     from selenium.webdriver.chrome.options import Options as ChromeOptions
@@ -30,7 +31,7 @@ else:
     web_options = ChromeOptions
     web_service = ChromeService
     web_manager = ChromeDriverManager
-
+    web_driver = webdriver.Chrome
 
 if not pathlib.Path("webdriver").exists() or len(list(pathlib.Path("webdriver").iterdir())) == 0:
     logger.info("Downloading webdriver. It may take some time...")
@@ -40,6 +41,10 @@ if not pathlib.Path("webdriver").exists() or len(list(pathlib.Path("webdriver").
     logger.info("Webdriver downloaded successfully")
 
 webdriver_path = next(pathlib.Path("webdriver").iterdir()).as_posix()
+
+options = web_options()
+options.add_argument("--headless")
+driver = web_driver(service=web_service(webdriver_path), options=options)
 
 
 def get_command_args(
@@ -105,10 +110,6 @@ def escape_html(text: str) -> str:
 
 
 def extract_chq(chq: str) -> int:
-    options = web_options()
-    options.add_argument("--headless")
-    driver = webdriver.Firefox(service=web_service(webdriver_path), options=options)
-
     chq_length = len(chq)
 
     bytes_array = bytearray(chq_length // 2)
@@ -135,8 +136,6 @@ def extract_chq(chq: str) -> int:
             return e;
         }}
     """)
-
-    driver.quit()
 
     return k
 
