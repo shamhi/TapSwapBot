@@ -1,12 +1,45 @@
-import re
+import os
 import asyncio
 from typing import Union
 
 from pyrogram import Client
 from pyrogram.types import Message
-from bs4 import BeautifulSoup
 
 from bot.utils.emojis import num, StaticEmoji
+from bot.utils import logger
+from bs4 import BeautifulSoup
+
+import pathlib
+import shutil
+from selenium import webdriver
+
+
+if os.name == "posix":
+    from selenium.webdriver.firefox.service import Service as FirefoxService
+    from selenium.webdriver.firefox.options import Options as FirefoxOptions
+    from webdriver_manager.firefox import GeckoDriverManager
+
+    web_options = FirefoxOptions
+    web_service = FirefoxService
+    web_manager = GeckoDriverManager
+else:
+    from selenium.webdriver.chrome.service import Service as ChromeService
+    from selenium.webdriver.chrome.options import Options as ChromeOptions
+    from webdriver_manager.chrome import ChromeDriverManager
+
+    web_options = ChromeOptions
+    web_service = ChromeService
+    web_manager = ChromeDriverManager
+
+
+if not pathlib.Path("webdriver").exists():
+    logger.info("Downloading webdriver. It may take some time...")
+    pathlib.Path("webdriver").mkdir(parents=True)
+    webdriver_path = pathlib.Path(web_manager().install())
+    shutil.move(webdriver_path, f"webdriver/{webdriver_path.name}")
+    logger.info("Webdriver downloaded successfully")
+
+webdriver_path = next(pathlib.Path("webdriver").iterdir()).as_posix()
 
 
 def get_command_args(
@@ -16,18 +49,14 @@ def get_command_args(
 ) -> str:
     if isinstance(message, str):
         return message.split(f"{prefixes}{command}", maxsplit=1)[-1].strip()
-
     if isinstance(command, str):
         args = message.text.split(f"{prefixes}{command}", maxsplit=1)[-1].strip()
         return args
-
     elif isinstance(command, list):
         for cmd in command:
             args = message.text.split(f"{prefixes}{cmd}", maxsplit=1)[-1]
-
             if args != message.text:
                 return args.strip()
-
     return ""
 
 
@@ -54,6 +83,7 @@ def get_help_text():
 </b>"""
 
 
+
 async def stop_tasks(client: Client = None) -> None:
     if client:
         all_tasks = asyncio.all_tasks(loop=client.loop)
@@ -70,12 +100,15 @@ async def stop_tasks(client: Client = None) -> None:
         except:
             ...
 
-
 def escape_html(text: str) -> str:
     return text.replace('<', '\\<').replace('>', '\\>')
 
 
 def extract_chq(chq: str) -> int:
+    options = web_options()
+    options.add_argument("--headless")
+    driver = webdriver.Firefox(service=web_service(webdriver_path), options=options)
+
     chq_length = len(chq)
 
     bytes_array = bytearray(chq_length // 2)
@@ -85,28 +118,25 @@ def extract_chq(chq: str) -> int:
         bytes_array[i // 2] = int(chq[i:i + 2], 16)
 
     xor_bytes = bytearray(t ^ xor_key for t in bytes_array)
-    decoded_xor = xor_bytes.decode('unicode_escape')
+    decoded_xor = xor_bytes.decode('utf-8')
 
-    html = re.search(r'innerHTML.+?=(.+?);', decoded_xor, re.DOTALL | re.I | re.M).group(1).strip()
-    html = re.sub(r"\'\+\'", "", html, flags=re.M | re.I)
-    soup = BeautifulSoup(html, 'html.parser')
+    driver.execute_script("""
+        var chrStub = document.createElement("div");
+        chrStub.id = "_chr_";
+        document.body.appendChild(chrStub);
+    """)
 
-    div_elements = soup.find_all('div')
-    codes = {}
-    for div in div_elements:
-        if 'id' in div.attrs and '_v' in div.attrs:
-            codes[div['id']] = div['_v']
+    fixed_xor = repr(decoded_xor).replace("`", "\\`")
 
-    va = re.search(r'''var(?:\s+)?i(?:\s+)?=.+?\([\'\"](\w+)[\'\"]\).+?,''', decoded_xor, flags=re.M | re.I).group(1)
-    vb = re.search(r'''\,(?:\s+)?j(?:\s+)?=.+?\([\'\"](\w+)[\'\"]\).+?,''', decoded_xor, flags=re.M | re.I).group(1)
-    r = re.search(r'''k(?:\s+)?%=(?:\s+)?(\w+)''', decoded_xor, flags=re.M | re.I).group(1)
+    k = driver.execute_script(f"""
+        try {{
+            return eval(`{fixed_xor[1:-1]}`);
+        }} catch (e) {{
+            return e;
+        }}
+    """)
 
-    i = int(codes[va])
-    j = int(codes[vb])
-    k = int(i)
-
-    k *= k
-    k *= j
-    k %= int(r, 16)
+    driver.quit()
 
     return k
+
