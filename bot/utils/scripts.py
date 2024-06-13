@@ -34,7 +34,7 @@ else:
 
 if not pathlib.Path("webdriver").exists() or len(list(pathlib.Path("webdriver").iterdir())) == 0:
     logger.info("Downloading webdriver. It may take some time...")
-    pathlib.Path("webdriver").mkdir(parents=True)
+    pathlib.Path("webdriver").mkdir(parents=True, exist_ok=True)
     webdriver_path = pathlib.Path(web_manager().install())
     shutil.move(webdriver_path, f"webdriver/{webdriver_path.name}")
     logger.info("Webdriver downloaded successfully")
