@@ -60,6 +60,7 @@
 ~/TapSwapBot >>> pip3 install -r requirements.txt
 ~/TapSwapBot >>> cp .env-example .env
 ~/TapSwapBot >>> nano .env  # Здесь вы обязательно должны указать ваши API_ID и API_HASH , остальное берется по умолчанию
+~/TapSwapBot >>> sh install.sh
 ~/TapSwapBot >>> python3 main.py
 
 # Windows
