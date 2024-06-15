@@ -58,6 +58,7 @@ You can download [**Repository**](https://github.com/shamhi/TapSwapBot) by cloni
 ~ >>> cd TapSwapBot
 
 #Linux
+~/TapSwapBot >>> sudo sh install.sh
 ~/TapSwapBot >>> python3 -m venv venv
 ~/TapSwapBot >>> source venv/bin/activate
 ~/TapSwapBot >>> pip3 install -r requirements.txt

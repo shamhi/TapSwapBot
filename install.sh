@@ -28,4 +28,10 @@ echo "Updating package list and installing Firefox..."
 sudo apt update
 sudo apt install -y firefox
 
+# Add localhost to hosts file
+echo "Adding localhost to hosts file..."
+sudo tee -a /etc/hosts <<EOF
+127.0.0.1 localhost
+EOF
+
 echo "Installation complete!"

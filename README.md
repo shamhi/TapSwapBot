@@ -5,7 +5,7 @@
 
 > 🇪🇳 README in english available [here](README-EN.md)
 
-## Функционал  
+## Функционал
 | Функционал                                                     | Поддерживается  |
 |----------------------------------------------------------------|:---------------:|
 | Многопоточность                                                |        ✅        |
@@ -51,10 +51,11 @@
 ## Установка
 Вы можете скачать [**Репозиторий**](https://github.com/shamhi/TapSwapBot) клонированием на вашу систему и установкой необходимых зависимостей:
 ```shell
-~ >>> git clone https://github.com/shamhi/TapSwapBot.git 
+~ >>> git clone https://github.com/shamhi/TapSwapBot.git
 ~ >>> cd TapSwapBot
 
 # Linux
+~/TapSwapBot >>> sudo sh install.sh
 ~/TapSwapBot >>> python3 -m venv venv
 ~/TapSwapBot >>> source venv/bin/activate
 ~/TapSwapBot >>> pip3 install -r requirements.txt
