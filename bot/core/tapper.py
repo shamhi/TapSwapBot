@@ -1,6 +1,7 @@
 import asyncio
 from time import time
 from random import randint
+import traceback
 from urllib.parse import unquote
 
 import aiohttp
@@ -19,10 +20,11 @@ from .headers import headers
 
 
 class Tapper:
-    def __init__(self, tg_client: Client):
+    def __init__(self, tg_client: Client, lock: asyncio.Lock):
         self.session_name = tg_client.name
         self.tg_client = tg_client
         self.user_id = 0
+        self.lock = lock
 
     async def get_tg_web_data(self, proxy: str | None) -> str:
         if proxy:
@@ -97,24 +99,32 @@ class Tapper:
             response.raise_for_status()
 
             response_json = await response.json()
-            chq = response_json.get('chq')
-            if chq:
-                chq_result = extract_chq(chq=chq)
+            wait_s = response_json.get('wait_s')
+            if wait_s:
+                logger.error(f"{self.session_name} | App overloaded, waiting for: {wait_s}")
+                await asyncio.sleep(delay=wait_s)
+                return self.login(http_client, tg_web_data)
 
-                response = await http_client.post(url='https://api.tapswap.ai/api/account/login',
-                                                  json={"chr": chq_result, "init_data": tg_web_data, "referrer": ""})
-                response_text = await response.text()
-                response.raise_for_status()
+            chq = response_json.get('chq')
+
+            if chq:
+                async with self.lock:
+                    chq_result = extract_chq(chq=chq)
+
+                    response = await http_client.post(url='https://api.tapswap.ai/api/account/login',
+                                                    json={"chr": chq_result, "init_data": tg_web_data, "referrer": ""})
+                    response_text = await response.text()
+                    response.raise_for_status()
 
                 response_json = await response.json()
-
             access_token = response_json['access_token']
             profile_data = response_json
 
             return profile_data, access_token
         except Exception as error:
+            traceback.print_exc()
             logger.error(f"{self.session_name} | Unknown error while getting Access Token: {error} | "
-                         f"Response text: {escape_html(response_text)[:128]}...")
+                         f"Response text: {escape_html(response_text)}...")
             await asyncio.sleep(delay=3)
 
     async def apply_boost(self, http_client: aiohttp.ClientSession, boost_type: str) -> bool:
@@ -391,8 +401,8 @@ class Tapper:
                 await asyncio.sleep(delay=sleep_between_clicks)
 
 
-async def run_tapper(tg_client: Client, proxy: str | None):
+async def run_tapper(tg_client: Client, proxy: str | None, lock: asyncio.Lock):
     try:
-        await Tapper(tg_client=tg_client).run(proxy=proxy)
+        await Tapper(tg_client=tg_client, lock=lock).run(proxy=proxy)
     except InvalidSession:
         logger.error(f"{tg_client.name} | Invalid Session")
