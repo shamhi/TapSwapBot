@@ -1,5 +1,6 @@
 import glob
 import os
+import re
 import asyncio
 from typing import Union
 
@@ -125,7 +126,15 @@ def escape_html(text: str) -> str:
     return text.replace('<', '\\<').replace('>', '\\>')
 
 
-def extract_chq(chq: str) -> int:
+def find_8_char(js_code, length=8):
+    pattern = re.compile(r'\b\w{' + str(length) + r'}\b')
+    matches = pattern.findall(js_code)
+    trash_words = set(['function', 'continue', 'document', 'parseInt', 'toString'])
+    filtered_matches = [match for match in matches if match.isalnum() and match not in trash_words and not match.startswith('x22')]
+    unique_filtered_matches = list(set(filtered_matches))
+    return ' '.join(unique_filtered_matches)
+
+def extract_chq(chq: str) -> dict[str]:
     global driver
 
     if driver is None:
@@ -158,6 +167,13 @@ def extract_chq(chq: str) -> int:
         }}
     """)
 
+    Cache_ID = find_8_charssss(fixed_xor[1:-1])
+
+    k = {
+        'code': int(k),
+        'ch': Cache_ID
+    }
+
     session_queue.put(1)
 
     if len(get_session_names()) == session_queue.qsize():
@@ -169,4 +185,3 @@ def extract_chq(chq: str) -> int:
             session_queue.get()
 
     return k
-
