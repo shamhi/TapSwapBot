@@ -167,7 +167,7 @@ def extract_chq(chq: str) -> dict[str]:
         }}
     """)
 
-    Cache_ID = find_8_charssss(fixed_xor[1:-1])
+    Cache_ID = find_8_char(fixed_xor[1:-1])
 
     k = {
         'code': int(k),
