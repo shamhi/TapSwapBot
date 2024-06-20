@@ -110,9 +110,10 @@ class Tapper:
             if chq:
                 async with self.lock:
                     chq_result = extract_chq(chq=chq)
+                    http_client.headers['Cache-Id'] = str(chq_result['ch'])
 
                     response = await http_client.post(url='https://api.tapswap.ai/api/account/login',
-                                                    json={"chr": chq_result, "init_data": tg_web_data, "referrer": ""})
+                                                    json={"chr": chq_result['code'], "init_data": tg_web_data, "referrer": ""})
                     response_text = await response.text()
                     response.raise_for_status()
 
