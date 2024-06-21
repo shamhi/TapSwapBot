@@ -13,7 +13,6 @@ from bot.core.tapper import run_tapper
 from bot.core.registrator import register_sessions
 from db.base import Base
 
-
 start_text = """
 
 ▀▀█▀▀ █▀▀█ █▀▀█ ░█▀▀▀█ █   █ █▀▀█ █▀▀█ ░█▀▀█ █▀▀█ ▀▀█▀▀ 
@@ -143,7 +142,9 @@ async def process() -> None:
 
 
 async def run_tasks(tg_clients: list[Client], db_pool: async_sessionmaker) -> None:
-    tasks = [run_tapper(tg_client=tg_client, db_pool=db_pool) for tg_client in tg_clients]
+    lock = asyncio.Lock()
+
+    tasks = [run_tapper(tg_client=tg_client, db_pool=db_pool, lock=lock) for tg_client in tg_clients]
     limit = settings.SESSION_PACK_LIMIT
     offset = 0
 
@@ -151,7 +152,7 @@ async def run_tasks(tg_clients: list[Client], db_pool: async_sessionmaker) -> No
         chunk = tasks[offset:offset + limit]
 
         if not chunk:
-            tasks = [run_tapper(tg_client=tg_client, db_pool=db_pool) for tg_client in tg_clients]
+            tasks = [run_tapper(tg_client=tg_client, db_pool=db_pool, lock=lock) for tg_client in tg_clients]
 
             limit = settings.SESSION_PACK_LIMIT
             offset = 0
