@@ -109,7 +109,7 @@ class Tapper:
 
             if chq:
                 async with self.lock:
-                    chq_result, cache_id_result = extract_chq(chq=chq)
+                    chq_result, cache_id_result = extract_chq(chq=chq, user_id=self.user_id)
 
                     http_client.headers['Cache-Id'] = str(cache_id_result)
 
