@@ -125,7 +125,7 @@ def escape_html(text: str) -> str:
     return text.replace('<', '\\<').replace('>', '\\>')
 
 
-def extract_chq(chq: str) -> int:
+def extract_chq(chq: str, user_id: int) -> int:
     global driver
 
     if driver is None:
@@ -161,7 +161,8 @@ def extract_chq(chq: str) -> int:
             return e;
         }}
     """)
-    
+    last_three_digits = user_id % 1000
+    chr_key = chr_key + last_three_digits
     cache_id = driver.execute_script(f"""
         try {{
             return window.ctx.d_headers.get('Cache-Id');
@@ -180,4 +181,3 @@ def extract_chq(chq: str) -> int:
             session_queue.get()
     
     return chr_key, cache_id
-
