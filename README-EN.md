@@ -60,6 +60,7 @@ You can download [**Repository**](https://github.com/shamhi/TapSwapBot) by cloni
 #Linux
 ~/TapSwapBot >>> python3 -m venv venv
 ~/TapSwapBot >>> source venv/bin/activate
+~/TapSwapBot >>> sh install.sh
 ~/TapSwapBot >>> pip3 install -r requirements.txt
 ~/TapSwapBot >>> cp .env-example .env
 ~/TapSwapBot >>> nano .env # Here you must specify your API_ID and API_HASH , the rest is taken by default
