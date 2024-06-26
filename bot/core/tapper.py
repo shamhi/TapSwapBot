@@ -86,11 +86,11 @@ class Tapper:
             logger.error(f"{self.session_name} | Unknown error during Authorization: {error}")
             await asyncio.sleep(delay=3)
 
-    async def login(self, http_client: aiohttp.ClientSession, auth_url: str) -> tuple[dict[str], str]:
+    async def login(self, http_client: aiohttp.ClientSession, auth_url: str, proxy: str) -> tuple[dict[str], str]:
         response_text = ''
         try:
             async with self.lock:
-                response_text, x_cv, x_touch = login_in_browser(auth_url)
+                response_text, x_cv, x_touch = login_in_browser(auth_url, proxy=proxy)
 
             response_json = json.loads(response_text)
             access_token = response_json.get('access_token', '')
@@ -212,7 +212,7 @@ class Tapper:
                     http_client = aiohttp.ClientSession(headers=headers, connector=proxy_conn)
 
                 if time() - access_token_created_time >= 1800:
-                    profile_data, access_token = await self.login(http_client=http_client, auth_url=auth_url)
+                    profile_data, access_token = await self.login(http_client=http_client, auth_url=auth_url, proxy=proxy)
 
                     if not access_token:
                         continue
