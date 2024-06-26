@@ -1,20 +1,22 @@
-import glob
 import os
+import glob
+import time
+import random
+import shutil
 import asyncio
+import pathlib
 from typing import Union
 
 from pyrogram import Client
 from pyrogram.types import Message
-
-from bot.utils.emojis import num, StaticEmoji
-from bot.utils import logger
-from bs4 import BeautifulSoup
-
-import pathlib
-import shutil
-from selenium import webdriver
+from better_proxy import Proxy
 from multiprocessing import Queue
+from seleniumwire import webdriver
+from selenium.webdriver.common.by import By
 
+from bot.config import settings
+from bot.utils import logger
+from bot.utils.emojis import num, StaticEmoji
 
 
 def get_session_names() -> list[str]:
@@ -26,41 +28,14 @@ def get_session_names() -> list[str]:
     return session_names
 
 
+def get_proxies() -> list[Proxy]:
+    if settings.USE_PROXY_FROM_FILE:
+        with open(file="bot/config/proxies.txt", encoding="utf-8-sig") as file:
+            proxies = [Proxy.from_str(proxy=row.strip()).as_url for row in file]
+    else:
+        proxies = []
 
-
-if os.name == "posix":
-    from selenium.webdriver.firefox.service import Service as FirefoxService
-    from selenium.webdriver.firefox.options import Options as FirefoxOptions
-    from webdriver_manager.firefox import GeckoDriverManager
-
-    web_options = FirefoxOptions
-    web_service = FirefoxService
-    web_manager = GeckoDriverManager
-    web_driver = webdriver.Firefox
-else:
-    from selenium.webdriver.chrome.service import Service as ChromeService
-    from selenium.webdriver.chrome.options import Options as ChromeOptions
-    from webdriver_manager.chrome import ChromeDriverManager
-
-    web_options = ChromeOptions
-    web_service = ChromeService
-    web_manager = ChromeDriverManager
-    web_driver = webdriver.Chrome
-
-if not pathlib.Path("webdriver").exists() or len(list(pathlib.Path("webdriver").iterdir())) == 0:
-    logger.info("Downloading webdriver. It may take some time...")
-    pathlib.Path("webdriver").mkdir(parents=True, exist_ok=True)
-    webdriver_path = pathlib.Path(web_manager().install())
-    shutil.move(webdriver_path, f"webdriver/{webdriver_path.name}")
-    logger.info("Webdriver downloaded successfully")
-
-webdriver_path = next(pathlib.Path("webdriver").iterdir()).as_posix()
-
-options = web_options()
-options.add_argument("--headless")
-driver = None
-
-session_queue = Queue()
+    return proxies
 
 
 def get_command_args(
@@ -104,7 +79,6 @@ def get_help_text():
 </b>"""
 
 
-
 async def stop_tasks(client: Client = None) -> None:
     if client:
         all_tasks = asyncio.all_tasks(loop=client.loop)
@@ -121,8 +95,54 @@ async def stop_tasks(client: Client = None) -> None:
         except:
             ...
 
+
 def escape_html(text: str) -> str:
     return text.replace('<', '\\<').replace('>', '\\>')
+
+
+if os.name == "posix":
+    from selenium.webdriver.firefox.service import Service as FirefoxService
+    from selenium.webdriver.firefox.options import Options as FirefoxOptions
+    from webdriver_manager.firefox import GeckoDriverManager
+
+    web_options = FirefoxOptions
+    web_service = FirefoxService
+    web_manager = GeckoDriverManager
+    web_driver = webdriver.Firefox
+else:
+    from selenium.webdriver.chrome.service import Service as ChromeService
+    from selenium.webdriver.chrome.options import Options as ChromeOptions
+    from webdriver_manager.chrome import ChromeDriverManager
+
+    web_options = ChromeOptions
+    web_service = ChromeService
+    web_manager = ChromeDriverManager
+    web_driver = webdriver.Chrome
+
+if not pathlib.Path("webdriver").exists() or len(list(pathlib.Path("webdriver").iterdir())) == 0:
+    logger.info("Downloading webdriver. It may take some time...")
+    pathlib.Path("webdriver").mkdir(parents=True, exist_ok=True)
+    webdriver_path = pathlib.Path(web_manager().install())
+    shutil.move(webdriver_path, f"webdriver/{webdriver_path.name}")
+    logger.info("Webdriver downloaded successfully")
+
+webdriver_path = next(pathlib.Path("webdriver").iterdir()).as_posix()
+
+device_metrics = {"width": 375, "height": 812, "pixelRatio": 3.0}
+user_agent = "Mozilla/5.0 (Linux; Android 13; RMX3630 Build/TP1A.220905.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/125.0.6422.165 Mobile Safari/537.36"
+
+mobile_emulation = {
+    "deviceMetrics": device_metrics,
+    "userAgent": user_agent,
+}
+
+options = web_options()
+options.add_argument("--headless")
+options.add_argument("--log-level=3")
+options.add_experimental_option("mobileEmulation", mobile_emulation)
+driver = None
+
+session_queue = Queue()
 
 
 def extract_chq(chq: str) -> int:
@@ -161,7 +181,7 @@ def extract_chq(chq: str) -> int:
             return e;
         }}
     """)
-    
+
     cache_id = driver.execute_script(f"""
         try {{
             return window.ctx.d_headers.get('Cache-Id');
@@ -169,7 +189,7 @@ def extract_chq(chq: str) -> int:
             return e;
         }}
     """)
-    
+
     session_queue.put(1)
 
     if len(get_session_names()) == session_queue.qsize():
@@ -178,6 +198,59 @@ def extract_chq(chq: str) -> int:
         driver = None
         while session_queue.qsize() > 0:
             session_queue.get()
-    
+
     return chr_key, cache_id
 
+
+# Other way
+def login_in_browser(auth_url: str) -> tuple[str, str, str]:
+    global driver
+
+    if driver is None:
+        driver = web_driver(service=web_service(webdriver_path), options=options)
+
+    driver.get(auth_url)
+
+    time.sleep(random.randint(7, 15))
+
+    try:
+        skip_button = driver.find_element(By.XPATH, '//*[@id="app"]/div[2]/button')
+        if skip_button:
+            skip_button.click()
+            time.sleep(random.randint(2, 5))
+    except:
+        ...
+
+    try:
+        coin = driver.find_element(By.XPATH, '//*[@id="ex1-layer"]')
+        if coin:
+            coin.click()
+    except:
+        ...
+
+    time.sleep(5)
+
+    response_text = '{}'
+    x_cv = '631'
+    x_touch = '1'
+
+    for request in driver.requests:
+        request_body = request.body.decode('utf-8')
+        if request.url == "https://api.tapswap.ai/api/account/login" and 'chr' in request_body:
+            response_text = request.response.body.decode('utf-8')
+
+        if request.url == "https://api.tapswap.ai/api/player/submit_taps":
+            headers = dict(request.headers.items())
+            x_cv = headers.get('X-Cv') or headers.get('x-cv')
+            x_touch = headers.get('X-Touch', '') or headers.get('x-touch', '')
+
+    session_queue.put(1)
+
+    if len(get_session_names()) == session_queue.qsize():
+        logger.info("All sessions are closed. Quitting driver...")
+        driver.quit()
+        driver = None
+        while session_queue.qsize() > 0:
+            session_queue.get()
+
+    return response_text, x_cv, x_touch
