@@ -137,9 +137,16 @@ mobile_emulation = {
 }
 
 options = web_options()
+
+if isinstance(options, ChromeOptions):
+    options.add_experimental_option("mobileEmulation", mobile_emulation)
+else:
+    options.set_preference("devtools.responsiveUI.presets", "custom")
+    options.set_preference("devtools.responsiveUI.customHeight", 640)
+    options.set_preference("devtools.responsiveUI.customWidth", 360)
+
 options.add_argument("--headless")
 options.add_argument("--log-level=3")
-options.add_experimental_option("mobileEmulation", mobile_emulation)
 driver = None
 
 session_queue = Queue()
