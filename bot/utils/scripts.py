@@ -210,11 +210,17 @@ def extract_chq(chq: str) -> int:
 
 
 # Other way
-def login_in_browser(auth_url: str) -> tuple[str, str, str]:
+def login_in_browser(auth_url: str, proxy: str) -> tuple[str, str, str]:
     global driver
 
     if driver is None:
-        driver = web_driver(service=web_service(webdriver_path), options=options)
+        proxy_options = {
+            'proxy': {
+                'http': proxy,
+                'https': proxy,
+            }
+        }
+        driver = web_driver(service=web_service(webdriver_path), options=options, seleniumwire_options=proxy_options)
 
     driver.get(auth_url)
 
