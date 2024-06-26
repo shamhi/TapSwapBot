@@ -214,12 +214,16 @@ def login_in_browser(auth_url: str, proxy: str) -> tuple[str, str, str]:
     global driver
 
     if driver is None:
-        proxy_options = {
-            'proxy': {
-                'http': proxy,
-                'https': proxy,
+        if proxy:
+            proxy_options = {
+                'proxy': {
+                    'http': proxy,
+                    'https': proxy,
+                }
             }
-        }
+        else:
+            proxy_options = None
+
         driver = web_driver(service=web_service(webdriver_path), options=options, seleniumwire_options=proxy_options)
 
     driver.get(auth_url)
