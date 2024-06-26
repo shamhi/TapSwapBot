@@ -1,8 +1,7 @@
+import json
 import asyncio
 from time import time
 from random import randint
-import traceback
-from urllib.parse import unquote
 
 import aiohttp
 from aiocfscrape import CloudflareScraper
@@ -14,7 +13,7 @@ from pyrogram.raw.functions.messages import RequestWebView
 
 from bot.config import settings
 from bot.utils import logger
-from bot.utils.scripts import extract_chq, escape_html
+from bot.utils.scripts import escape_html, login_in_browser
 from bot.exceptions import InvalidSession
 from .headers import headers
 
@@ -26,7 +25,7 @@ class Tapper:
         self.user_id = 0
         self.lock = lock
 
-    async def get_tg_web_data(self, proxy: str | None) -> str:
+    async def get_auth_url(self, proxy: str | None) -> str:
         if proxy:
             proxy = Proxy.from_str(proxy)
             proxy_dict = dict(
@@ -71,17 +70,14 @@ class Tapper:
                 url='https://app.tapswap.ai/'
             ))
 
-            auth_url = web_view.url
-            tg_web_data = unquote(
-                string=unquote(
-                    string=auth_url.split('tgWebAppData=', maxsplit=1)[1].split('&tgWebAppVersion', maxsplit=1)[0]))
+            auth_url = web_view.url.replace('tgWebAppVersion=6.7', 'tgWebAppVersion=7.2')
 
             self.user_id = (await self.tg_client.get_me()).id
 
             if with_tg is False:
                 await self.tg_client.disconnect()
 
-            return tg_web_data
+            return auth_url
 
         except InvalidSession as error:
             raise error
@@ -90,45 +86,27 @@ class Tapper:
             logger.error(f"{self.session_name} | Unknown error during Authorization: {error}")
             await asyncio.sleep(delay=3)
 
-    async def login(self, http_client: aiohttp.ClientSession, tg_web_data: str) -> tuple[dict[str], str]:
+    async def login(self, http_client: aiohttp.ClientSession, auth_url: str) -> tuple[dict[str], str]:
         response_text = ''
         try:
-            response = await http_client.post(url='https://api.tapswap.ai/api/account/login',
-                                              json={"init_data": tg_web_data, "referrer": ""})
-            response_text = await response.text()
-            response.raise_for_status()
+            async with self.lock:
+                response_text, x_cv, x_touch = login_in_browser(auth_url)
 
-            response_json = await response.json()
-            wait_s = response_json.get('wait_s')
-            if wait_s:
-                logger.error(f"{self.session_name} | App overloaded, waiting for: {wait_s}")
-                await asyncio.sleep(delay=wait_s)
-                return self.login(http_client, tg_web_data)
-
-            chq = response_json.get('chq')
-
-            if chq:
-                async with self.lock:
-                    chq_result, cache_id_result = extract_chq(chq=chq)
-
-                    http_client.headers['Cache-Id'] = str(cache_id_result)
-
-                    response = await http_client.post(url='https://api.tapswap.ai/api/account/login',
-                                                      json={"chr": chq_result, "init_data": tg_web_data,
-                                                            "referrer": ""})
-                    response_text = await response.text()
-                    response.raise_for_status()
-
-                response_json = await response.json()
-            access_token = response_json['access_token']
+            response_json = json.loads(response_text)
+            access_token = response_json.get('access_token', '')
             profile_data = response_json
+
+            if headers:
+                http_client.headers['X-Cv'] = x_cv
+                http_client.headers['X-Touch'] = x_touch
 
             return profile_data, access_token
         except Exception as error:
-            traceback.print_exc()
-            logger.error(f"{self.session_name} | Unknown error while getting Access Token: {error} | "
+            logger.error(f"{self.session_name} | Unknown error while Login: {error} | "
                          f"Response text: {escape_html(response_text)}...")
             await asyncio.sleep(delay=3)
+
+            return {}, ''
 
     async def apply_boost(self, http_client: aiohttp.ClientSession, boost_type: str) -> bool:
         response_text = ''
@@ -184,10 +162,11 @@ class Tapper:
             timestamp = int(time() * 1000)
             content_id = int((timestamp * self.user_id * self.user_id / self.user_id) % self.user_id % self.user_id)
 
+            json_data = {'taps': taps, 'time': timestamp}
+
             http_client.headers['Content-Id'] = str(content_id)
 
-            response = await http_client.post(url='https://api.tapswap.ai/api/player/submit_taps',
-                                              json={'taps': taps, 'time': timestamp})
+            response = await http_client.post(url='https://api.tapswap.ai/api/player/submit_taps', json=json_data)
             response_text = await response.text()
             response.raise_for_status()
 
@@ -220,7 +199,7 @@ class Tapper:
         if proxy:
             await self.check_proxy(http_client=http_client, proxy=proxy)
 
-        tg_web_data = await self.get_tg_web_data(proxy=proxy)
+        auth_url = await self.get_auth_url(proxy=proxy)
 
         while True:
             try:
@@ -233,7 +212,7 @@ class Tapper:
                     http_client = aiohttp.ClientSession(headers=headers, connector=proxy_conn)
 
                 if time() - access_token_created_time >= 1800:
-                    profile_data, access_token = await self.login(http_client=http_client, tg_web_data=tg_web_data)
+                    profile_data, access_token = await self.login(http_client=http_client, auth_url=auth_url)
 
                     if not access_token:
                         continue
