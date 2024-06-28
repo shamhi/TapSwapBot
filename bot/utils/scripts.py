@@ -28,6 +28,7 @@ def get_session_names() -> list[str]:
 
 
 def escape_html(text: str) -> str:
+    text = str(text)
     return text.replace('<', '\\<').replace('>', '\\>')
 
 
@@ -59,6 +60,8 @@ options.add_experimental_option("mobileEmulation", mobile_emulation)
 
 options.add_argument("--headless")
 options.add_argument("--log-level=3")
+options.add_argument('--no-sandbox')
+options.add_argument('--disable-dev-shm-usage')
 driver = None
 
 session_queue = Queue()
