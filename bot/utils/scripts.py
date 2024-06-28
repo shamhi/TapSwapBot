@@ -101,6 +101,7 @@ async def stop_tasks(client: Client = None) -> None:
 
 
 def escape_html(text: str) -> str:
+    text = str(text)
     return text.replace('<', '\\<').replace('>', '\\>')
 
 
