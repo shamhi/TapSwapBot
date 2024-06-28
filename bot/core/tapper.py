@@ -83,7 +83,7 @@ class Tapper:
             raise error
 
         except Exception as error:
-            logger.error(f"{self.session_name} | Unknown error during Authorization: {error}")
+            logger.error(f"{self.session_name} | Unknown error during Authorization: {escape_html(error)}")
             await asyncio.sleep(delay=3)
 
     async def login(self, http_client: aiohttp.ClientSession, auth_url: str, proxy: str) -> tuple[dict[str], str]:
@@ -102,7 +102,7 @@ class Tapper:
 
             return profile_data, access_token
         except Exception as error:
-            logger.error(f"{self.session_name} | Unknown error while Login: {error} | "
+            logger.error(f"{self.session_name} | Unknown error while Login: {escape_html(error)} | "
                          f"Response text: {escape_html(response_text)}...")
             await asyncio.sleep(delay=3)
 
@@ -118,7 +118,7 @@ class Tapper:
 
             return True
         except Exception as error:
-            logger.error(f"{self.session_name} | Unknown error when Apply {boost_type} Boost: {error} | "
+            logger.error(f"{self.session_name} | Unknown error when Apply {boost_type} Boost: {escape_html(error)} | "
                          f"Response text: {escape_html(response_text)[:128]}...")
             await asyncio.sleep(delay=3)
 
@@ -134,7 +134,7 @@ class Tapper:
 
             return True
         except Exception as error:
-            logger.error(f"{self.session_name} | Unknown error when Upgrade {boost_type} Boost: {error} | "
+            logger.error(f"{self.session_name} | Unknown error when Upgrade {boost_type} Boost: {escape_html(error)} | "
                          f"Response text: {escape_html(response_text)[:128]}...")
             await asyncio.sleep(delay=3)
 
@@ -150,7 +150,7 @@ class Tapper:
 
             return True
         except Exception as error:
-            logger.error(f"{self.session_name} | Unknown error when Claim {task_id} Reward: {error} | "
+            logger.error(f"{self.session_name} | Unknown error when Claim {task_id} Reward: {escape_html(error)} | "
                          f"Response text: {escape_html(response_text)[:128]}...")
             await asyncio.sleep(delay=3)
 
@@ -175,7 +175,7 @@ class Tapper:
 
             return player_data
         except Exception as error:
-            logger.error(f"{self.session_name} | Unknown error when Tapping: {error} | "
+            logger.error(f"{self.session_name} | Unknown error when Tapping: {escape_html(error)} | "
                          f"Response text: {escape_html(response_text)[:128]}...")
             await asyncio.sleep(delay=3)
 
@@ -185,7 +185,7 @@ class Tapper:
             ip = (await response.json()).get('origin')
             logger.info(f"{self.session_name} | Proxy IP: {ip}")
         except Exception as error:
-            logger.error(f"{self.session_name} | Proxy: {proxy} | Error: {error}")
+            logger.error(f"{self.session_name} | Proxy: {proxy} | Error: {escape_html(error)}")
 
     async def run(self, proxy: str | None) -> None:
         access_token_created_time = 0
@@ -370,7 +370,7 @@ class Tapper:
                 raise error
 
             except Exception as error:
-                logger.error(f"{self.session_name} | Unknown error: {error}")
+                logger.error(f"{self.session_name} | Unknown error: {escape_html(error)}")
                 await asyncio.sleep(delay=3)
 
             else:
