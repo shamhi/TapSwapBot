@@ -14,9 +14,6 @@ from multiprocessing import Queue
 
 from seleniumwire import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.firefox.service import Service as FirefoxService
-from selenium.webdriver.firefox.options import Options as FirefoxOptions
-from webdriver_manager.firefox import GeckoDriverManager
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from webdriver_manager.chrome import ChromeDriverManager
@@ -107,16 +104,10 @@ def escape_html(text: str) -> str:
     return text.replace('<', '\\<').replace('>', '\\>')
 
 
-if os.name == "posix":
-    web_options = FirefoxOptions
-    web_service = FirefoxService
-    web_manager = GeckoDriverManager
-    web_driver = webdriver.Firefox
-else:
-    web_options = ChromeOptions
-    web_service = ChromeService
-    web_manager = ChromeDriverManager
-    web_driver = webdriver.Chrome
+web_options = ChromeOptions
+web_service = ChromeService
+web_manager = ChromeDriverManager
+web_driver = webdriver.Chrome
 
 if not pathlib.Path("webdriver").exists() or len(list(pathlib.Path("webdriver").iterdir())) == 0:
     logger.info("Downloading webdriver. It may take some time...")
@@ -137,13 +128,7 @@ mobile_emulation = {
 
 options = web_options()
 
-if isinstance(options, ChromeOptions):
-    options.add_experimental_option("mobileEmulation", mobile_emulation)
-else:
-    options.set_preference("devtools.responsiveUI.presets", "custom")
-    options.set_preference("devtools.responsiveUI.customHeight", 640)
-    options.set_preference("devtools.responsiveUI.customWidth", 360)
-    options.add_argument(f"--user-agent={user_agent}")
+options.add_experimental_option("mobileEmulation", mobile_emulation)
 
 options.add_argument("--headless")
 options.add_argument("--log-level=3")
