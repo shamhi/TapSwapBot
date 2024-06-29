@@ -6,6 +6,7 @@ import shutil
 import asyncio
 import pathlib
 from typing import Union
+import subprocess
 
 from pyrogram import Client
 from pyrogram.types import Message
@@ -257,5 +258,9 @@ def login_in_browser(auth_url: str, proxy: str) -> tuple[str, str, str]:
         driver = None
         while session_queue.qsize() > 0:
             session_queue.get()
+            
+        if os.name == "posix":
+            subprocess.run(["pkill", "-9", "chrome"])
+            logger.info("Chrome process killed")
 
     return response_text, x_cv, x_touch
