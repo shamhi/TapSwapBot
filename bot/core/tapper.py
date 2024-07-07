@@ -1,7 +1,9 @@
 import json
 import asyncio
-from time import time
+from time import time, sleep
 from random import randint
+
+import yt_dlp
 
 import aiohttp
 from aiocfscrape import CloudflareScraper
@@ -16,6 +18,12 @@ from bot.utils import logger
 from bot.utils.scripts import escape_html, login_in_browser
 from bot.exceptions import InvalidSession
 from .headers import headers
+
+import pytube
+import pytesseract
+import cv2
+from PIL import Image
+import re
 
 
 class Tapper:
@@ -70,7 +78,8 @@ class Tapper:
                 url='https://app.tapswap.ai/'
             ))
 
-            auth_url = web_view.url.replace('tgWebAppVersion=6.7', 'tgWebAppVersion=7.2')
+            auth_url = web_view.url.replace(
+                'tgWebAppVersion=6.7', 'tgWebAppVersion=7.2')
 
             self.user_id = (await self.tg_client.get_me()).id
 
@@ -83,14 +92,16 @@ class Tapper:
             raise error
 
         except Exception as error:
-            logger.error(f"{self.session_name} | Unknown error during Authorization: {escape_html(error)}")
+            logger.error(
+                f"{self.session_name} | Unknown error during Authorization: {escape_html(error)}")
             await asyncio.sleep(delay=3)
 
     async def login(self, http_client: aiohttp.ClientSession, auth_url: str, proxy: str) -> tuple[dict[str], str]:
         response_text = ''
         try:
             async with self.lock:
-                response_text, x_cv, x_touch = login_in_browser(auth_url, proxy=proxy)
+                response_text, x_cv, x_touch = login_in_browser(
+                    auth_url, proxy=proxy)
 
             response_json = json.loads(response_text)
             access_token = response_json.get('access_token', '')
@@ -160,7 +171,8 @@ class Tapper:
         response_text = ''
         try:
             timestamp = int(time() * 1000)
-            content_id = int((timestamp * self.user_id * self.user_id / self.user_id) % self.user_id % self.user_id)
+            content_id = int((timestamp * self.user_id * self.user_id /
+                             self.user_id) % self.user_id % self.user_id)
 
             json_data = {'taps': taps, 'time': timestamp}
 
@@ -185,7 +197,8 @@ class Tapper:
             ip = (await response.json()).get('origin')
             logger.info(f"{self.session_name} | Proxy IP: {ip}")
         except Exception as error:
-            logger.error(f"{self.session_name} | Proxy: {proxy} | Error: {escape_html(error)}")
+            logger.error(
+                f"{self.session_name} | Proxy: {proxy} | Error: {escape_html(error)}")
 
     async def run(self, proxy: str | None) -> None:
         access_token_created_time = 0
@@ -201,6 +214,50 @@ class Tapper:
 
         auth_url = await self.get_auth_url(proxy=proxy)
 
+        async def extract_code_from_frame(frame):
+            image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+            text = pytesseract.image_to_string(image)
+
+            match = re.search(r'[A-Za-z0-9]{6,}', text)
+            if match:
+                return match.group(0)
+            return None
+
+        async def submit_code(http_client, code):
+            url = "https://api.tapswap.ai/api/player/apply_reward_code"
+
+            http_client.headers['Content-Type'] = 'application/json'
+            payload = {'code': code}
+            response = await http_client.post(url=url, json=payload)
+            response_text = await response.text()
+            if response.status == 401:
+                print("Unauthorized: Please check the authentication.")
+            print(
+                f"Submitted Code: {code}, Response: {response.status}, {response_text}")
+
+        async def monitor_youtube_stream(http_client):
+            youtube_url = "https://www.youtube.com/live/0Sfo3oBkfSU"
+            ydl_opts = {'format': 'best'}
+            while True:
+                try:
+                    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                        info_dict = ydl.extract_info(
+                            youtube_url, download=False)
+                        video_url = info_dict['url']
+                        cap = cv2.VideoCapture(video_url)
+                        success, frame = cap.read()
+                        if success:
+                            code = await extract_code_from_frame(frame)
+                            if code:
+                                await submit_code(http_client, code)
+                    await asyncio.sleep(20)
+                except Exception as e:
+                    logger.error(
+                        f"Error monitoring YouTube stream: {escape_html(e)}")
+                    await asyncio.sleep(20)
+
+        await monitor_youtube_stream(http_client)
+
         while True:
             try:
                 if http_client.closed:
@@ -209,7 +266,8 @@ class Tapper:
                             proxy_conn.close()
 
                     proxy_conn = ProxyConnector().from_url(proxy) if proxy else None
-                    http_client = aiohttp.ClientSession(headers=headers, connector=proxy_conn)
+                    http_client = aiohttp.ClientSession(
+                        headers=headers, connector=proxy_conn)
 
                 if time() - access_token_created_time >= 1800:
                     profile_data, access_token = await self.login(http_client=http_client, auth_url=auth_url, proxy=proxy)
@@ -225,7 +283,8 @@ class Tapper:
                     if tap_bot:
                         bot_earned = profile_data['bot_shares']
 
-                        logger.success(f"{self.session_name} | Tap bot earned +{bot_earned:,} coins!")
+                        logger.success(
+                            f"{self.session_name} | Tap bot earned +{bot_earned:,} coins!")
 
                     balance = profile_data['player']['shares']
 
@@ -239,16 +298,19 @@ class Tapper:
                     claims = profile_data['player']['claims']
                     if claims:
                         for task_id in claims:
-                            logger.info(f"{self.session_name} | Sleep 5s before claim <m>{task_id}</m> reward")
+                            logger.info(
+                                f"{self.session_name} | Sleep 5s before claim <m>{task_id}</m> reward")
                             await asyncio.sleep(delay=5)
 
                             status = await self.claim_reward(http_client=http_client, task_id=task_id)
                             if status is True:
-                                logger.success(f"{self.session_name} | Successfully claim <m>{task_id}</m> reward")
+                                logger.success(
+                                    f"{self.session_name} | Successfully claim <m>{task_id}</m> reward")
 
                                 await asyncio.sleep(delay=1)
 
-                taps = randint(a=settings.RANDOM_TAPS_COUNT[0], b=settings.RANDOM_TAPS_COUNT[1])
+                taps = randint(
+                    a=settings.RANDOM_TAPS_COUNT[0], b=settings.RANDOM_TAPS_COUNT[1])
 
                 if active_turbo:
                     taps += settings.ADD_TAPS_ON_TURBO
@@ -281,24 +343,28 @@ class Tapper:
                     if (energy_boost_count > 0
                             and available_energy < settings.MIN_AVAILABLE_ENERGY
                             and settings.APPLY_DAILY_ENERGY is True):
-                        logger.info(f"{self.session_name} | Sleep 5s before activating the daily energy boost")
+                        logger.info(
+                            f"{self.session_name} | Sleep 5s before activating the daily energy boost")
                         await asyncio.sleep(delay=5)
 
                         status = await self.apply_boost(http_client=http_client, boost_type="energy")
                         if status is True:
-                            logger.success(f"{self.session_name} | Energy boost applied")
+                            logger.success(
+                                f"{self.session_name} | Energy boost applied")
 
                             await asyncio.sleep(delay=1)
 
                         continue
 
                     if turbo_boost_count > 0 and settings.APPLY_DAILY_TURBO is True:
-                        logger.info(f"{self.session_name} | Sleep 5s before activating the daily turbo boost")
+                        logger.info(
+                            f"{self.session_name} | Sleep 5s before activating the daily turbo boost")
                         await asyncio.sleep(delay=5)
 
                         status = await self.apply_boost(http_client=http_client, boost_type="turbo")
                         if status is True:
-                            logger.success(f"{self.session_name} | Turbo boost applied")
+                            logger.success(
+                                f"{self.session_name} | Turbo boost applied")
 
                             await asyncio.sleep(delay=1)
 
@@ -310,12 +376,14 @@ class Tapper:
                     if (settings.AUTO_UPGRADE_TAP is True
                             and balance > tap_prices.get(next_tap_level, 0)
                             and next_tap_level <= settings.MAX_TAP_LEVEL):
-                        logger.info(f"{self.session_name} | Sleep 5s before upgrade tap to {next_tap_level} lvl")
+                        logger.info(
+                            f"{self.session_name} | Sleep 5s before upgrade tap to {next_tap_level} lvl")
                         await asyncio.sleep(delay=5)
 
                         status = await self.upgrade_boost(http_client=http_client, boost_type="tap")
                         if status is True:
-                            logger.success(f"{self.session_name} | Tap upgraded to {next_tap_level} lvl")
+                            logger.success(
+                                f"{self.session_name} | Tap upgraded to {next_tap_level} lvl")
 
                             await asyncio.sleep(delay=1)
 
@@ -330,7 +398,8 @@ class Tapper:
 
                         status = await self.upgrade_boost(http_client=http_client, boost_type="energy")
                         if status is True:
-                            logger.success(f"{self.session_name} | Energy upgraded to {next_energy_level} lvl")
+                            logger.success(
+                                f"{self.session_name} | Energy upgraded to {next_energy_level} lvl")
 
                             await asyncio.sleep(delay=1)
 
@@ -345,7 +414,8 @@ class Tapper:
 
                         status = await self.upgrade_boost(http_client=http_client, boost_type="charge")
                         if status is True:
-                            logger.success(f"{self.session_name} | Charge upgraded to {next_charge_level} lvl")
+                            logger.success(
+                                f"{self.session_name} | Charge upgraded to {next_charge_level} lvl")
 
                             await asyncio.sleep(delay=1)
 
@@ -357,10 +427,13 @@ class Tapper:
                             if not proxy_conn.closed:
                                 proxy_conn.close()
 
-                        random_sleep = randint(settings.SLEEP_BY_MIN_ENERGY[0], settings.SLEEP_BY_MIN_ENERGY[1])
+                        random_sleep = randint(
+                            settings.SLEEP_BY_MIN_ENERGY[0], settings.SLEEP_BY_MIN_ENERGY[1])
 
-                        logger.info(f"{self.session_name} | Minimum energy reached: {available_energy}")
-                        logger.info(f"{self.session_name} | Sleep {random_sleep:,}s")
+                        logger.info(
+                            f"{self.session_name} | Minimum energy reached: {available_energy}")
+                        logger.info(
+                            f"{self.session_name} | Sleep {random_sleep:,}s")
 
                         await asyncio.sleep(delay=random_sleep)
 
@@ -370,11 +443,13 @@ class Tapper:
                 raise error
 
             except Exception as error:
-                logger.error(f"{self.session_name} | Unknown error: {escape_html(error)}")
+                logger.error(
+                    f"{self.session_name} | Unknown error: {escape_html(error)}")
                 await asyncio.sleep(delay=3)
 
             else:
-                sleep_between_clicks = randint(a=settings.SLEEP_BETWEEN_TAP[0], b=settings.SLEEP_BETWEEN_TAP[1])
+                sleep_between_clicks = randint(
+                    a=settings.SLEEP_BETWEEN_TAP[0], b=settings.SLEEP_BETWEEN_TAP[1])
 
                 if active_turbo is True:
                     sleep_between_clicks = 4
