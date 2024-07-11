@@ -16,6 +16,7 @@ from bot.utils import logger
 from bot.utils.scripts import escape_html, login_in_browser
 from bot.exceptions import InvalidSession
 from .headers import headers
+from .agents import generate_random_user_agent
 
 
 class Tapper:
@@ -24,6 +25,57 @@ class Tapper:
         self.tg_client = tg_client
         self.user_id = 0
         self.lock = lock
+
+         self.session_ug_dict = self.load_user_agents() or []
+
+                headers['User-Agent'] = self.check_user_agent()
+
+            async def generate_random_user_agent(self):
+                return generate_random_user_agent(device_type='android', browser_type='chrome')
+
+            def save_user_agent(self):
+                user_agents_file_name = "user_agents.json"
+
+                if not any(session['session_name'] == self.session_name for session in self.session_ug_dict):
+                    user_agent_str = generate_random_user_agent()
+
+                    self.session_ug_dict.append({
+                        'session_name': self.session_name,
+                        'user_agent': user_agent_str})
+
+                    with open(user_agents_file_name, 'w') as user_agents:
+                        json.dump(self.session_ug_dict, user_agents, indent=4)
+
+                    logger.info(f"<light-yellow>{self.session_name}</light-yellow> | User agent saved successfully")
+
+                    return user_agent_str
+
+            def load_user_agents(self):
+                user_agents_file_name = "user_agents.json"
+
+                try:
+                    with open(user_agents_file_name, 'r') as user_agents:
+                        session_data = json.load(user_agents)
+                        if isinstance(session_data, list):
+                            return session_data
+
+                except FileNotFoundError:
+                    logger.warning("User agents file not found, creating...")
+
+                except json.JSONDecodeError:
+                    logger.warning("User agents file is empty or corrupted.")
+
+                return []
+
+            def check_user_agent(self):
+                load = next(
+                    (session['user_agent'] for session in self.session_ug_dict if session['session_name'] == self.session_name),
+                    None)
+
+                if load is None:
+                    return self.save_user_agent()
+
+                return load
 
     async def get_auth_url(self, proxy: str | None) -> str:
         if proxy:
