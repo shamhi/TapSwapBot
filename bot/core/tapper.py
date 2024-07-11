@@ -26,17 +26,17 @@ class Tapper:
         self.user_id = 0
         self.lock = lock
 
-         self.session_ug_dict = self.load_user_agents() or []
+        self.session_ug_dict = self.load_user_agents() or []
 
-                headers['User-Agent'] = self.check_user_agent()
+        headers['User-Agent'] = self.check_user_agent()
 
-            async def generate_random_user_agent(self):
-                return generate_random_user_agent(device_type='android', browser_type='chrome')
+    async def generate_random_user_agent(self):
+        return generate_random_user_agent(device_type='android', browser_type='chrome')
 
-            def save_user_agent(self):
-                user_agents_file_name = "user_agents.json"
+    def save_user_agent(self):
+        user_agents_file_name = "user_agents.json"
 
-                if not any(session['session_name'] == self.session_name for session in self.session_ug_dict):
+        if not any(session['session_name'] == self.session_name for session in self.session_ug_dict):
                     user_agent_str = generate_random_user_agent()
 
                     self.session_ug_dict.append({
@@ -50,7 +50,7 @@ class Tapper:
 
                     return user_agent_str
 
-            def load_user_agents(self):
+    def load_user_agents(self):
                 user_agents_file_name = "user_agents.json"
 
                 try:
@@ -67,7 +67,7 @@ class Tapper:
 
                 return []
 
-            def check_user_agent(self):
+    def check_user_agent(self):
                 load = next(
                     (session['user_agent'] for session in self.session_ug_dict if session['session_name'] == self.session_name),
                     None)
