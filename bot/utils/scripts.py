@@ -198,6 +198,19 @@ def extract_chq(chq: str) -> int:
 
     return chr_key, cache_id
 
+def safe_qsize(queue: Queue) -> int:
+    try:
+        return queue.qsize()
+    except NotImplementedError:
+        # Alternative way to count items if qsize() is not implemented
+        count = 0
+        while not queue.empty():
+            queue.get()
+            count += 1
+        # Re-populate the queue
+        for _ in range(count):
+            queue.put(1)
+        return count
 
 # Other way
 def login_in_browser(auth_url: str, proxy: str) -> tuple[str, str, str]:
@@ -253,11 +266,11 @@ def login_in_browser(auth_url: str, proxy: str) -> tuple[str, str, str]:
 
     session_queue.put(1)
 
-    if len(get_session_names()) == session_queue.qsize():
+    if len(get_session_names()) == safe_qsize(session_queue):
         logger.info("All sessions are closed. Quitting driver...")
         driver.quit()
         driver = None
-        while session_queue.qsize() > 0:
+        while safe_qsize(session_queue) > 0:
             session_queue.get()
 
     return response_text, x_cv, x_touch
