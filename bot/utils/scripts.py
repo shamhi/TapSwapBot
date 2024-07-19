@@ -238,15 +238,15 @@ def login_in_browser(auth_url: str, proxy: str) -> tuple[str, str, str]:
     time.sleep(5)
 
     response_text = '{}'
-    x_cv = '631'
+    x_cv = '651'
     x_touch = '1'
 
     for request in driver.requests:
         request_body = request.body.decode('utf-8')
-        if request.url == "https://api.tapswap.ai/api/account/login" and 'chr' in request_body:
+        if request.url == "https://api.tapswap.club/api/account/challenge" and 'chr' in request_body:
             response_text = request.response.body.decode('utf-8')
 
-        if request.url == "https://api.tapswap.ai/api/player/submit_taps":
+        if request.url == "https://api.tapswap.club/api/player/submit_taps":
             headers = dict(request.headers.items())
             x_cv = headers.get('X-Cv') or headers.get('x-cv')
             x_touch = headers.get('X-Touch', '') or headers.get('x-touch', '')
