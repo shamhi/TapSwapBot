@@ -6,6 +6,7 @@ import shutil
 import asyncio
 import pathlib
 from typing import Union
+from contextlib import contextmanager
 
 from pyrogram import Client
 from pyrogram.types import Message
@@ -24,10 +25,7 @@ from bot.utils.emojis import num, StaticEmoji
 
 
 def get_session_names() -> list[str]:
-    session_names = glob.glob("sessions/*.session")
-    session_names = [
-        os.path.splitext(os.path.basename(file))[0] for file in session_names
-    ]
+    session_names = [os.path.splitext(os.path.basename(file))[0] for file in glob.glob("sessions/*.session")]
 
     return session_names
 
@@ -133,75 +131,67 @@ options.add_experimental_option("mobileEmulation", mobile_emulation)
 
 options.add_argument("--headless")
 options.add_argument("--log-level=3")
-options.add_argument('--no-sandbox')
-options.add_argument('--disable-dev-shm-usage')
-driver = None
+if os.name == 'posix':
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
 
-session_queue = Queue()
+
+@contextmanager
+def create_webdriver():
+    driver = web_driver(service=web_service(webdriver_path), options=options)
+    try:
+        yield driver
+    finally:
+        driver.quit()
 
 
 def extract_chq(chq: str) -> int:
-    global driver
+    with create_webdriver() as driver:
+        chq_length = len(chq)
 
-    if driver is None:
-        driver = web_driver(service=web_service(webdriver_path), options=options)
+        bytes_array = bytearray(chq_length // 2)
+        xor_key = 157
 
-    chq_length = len(chq)
+        for i in range(0, chq_length, 2):
+            bytes_array[i // 2] = int(chq[i:i + 2], 16)
 
-    bytes_array = bytearray(chq_length // 2)
-    xor_key = 157
+        xor_bytes = bytearray(t ^ xor_key for t in bytes_array)
+        decoded_xor = xor_bytes.decode('utf-8')
 
-    for i in range(0, chq_length, 2):
-        bytes_array[i // 2] = int(chq[i:i + 2], 16)
+        driver.execute_script("""
+            window.ctx = {}
+            window.ctx.api = {}
+            window.ctx.d_headers = new Map()
+            window.ctx.api.setHeaders = function(entries) { for (const [W, U] of Object.entries(entries)) window.ctx.d_headers.set(W, U) }
+            var chrStub = document.createElement("div");
+            chrStub.id = "_chr_";
+            document.body.appendChild(chrStub);
+        """)
 
-    xor_bytes = bytearray(t ^ xor_key for t in bytes_array)
-    decoded_xor = xor_bytes.decode('utf-8')
+        fixed_xor = repr(decoded_xor).replace("`", "\\`")
 
-    driver.execute_script("""
-        window.ctx = {}
-        window.ctx.api = {}
-        window.ctx.d_headers = new Map()
-        window.ctx.api.setHeaders = function(entries) { for (const [W, U] of Object.entries(entries)) window.ctx.d_headers.set(W, U) }
-        var chrStub = document.createElement("div");
-        chrStub.id = "_chr_";
-        document.body.appendChild(chrStub);
-    """)
+        chr_key = driver.execute_script(f"""
+            try {{
+                return eval(`{fixed_xor[1:-1]}`);
+            }} catch (e) {{
+                return e;
+            }}
+        """)
 
-    fixed_xor = repr(decoded_xor).replace("`", "\\`")
-
-    chr_key = driver.execute_script(f"""
-        try {{
-            return eval(`{fixed_xor[1:-1]}`);
-        }} catch (e) {{
-            return e;
-        }}
-    """)
-
-    cache_id = driver.execute_script(f"""
-        try {{
-            return window.ctx.d_headers.get('Cache-Id');
-        }} catch (e) {{
-            return e;
-        }}
-    """)
-
-    session_queue.put(1)
-
-    if len(get_session_names()) == session_queue.qsize():
-        logger.info("All sessions are closed. Quitting driver...")
-        driver.quit()
-        driver = None
-        while session_queue.qsize() > 0:
-            session_queue.get()
+        cache_id = driver.execute_script(f"""
+            try {{
+                return window.ctx.d_headers.get('Cache-Id');
+            }} catch (e) {{
+                return e;
+            }}
+        """)
 
     return chr_key, cache_id
 
 
 # Other way
 def login_in_browser(auth_url: str, proxy: str) -> tuple[str, str, str]:
-    global driver
-
-    if driver is None:
+    with create_webdriver() as driver:
         if proxy:
             proxy_options = {
                 'proxy': {
@@ -214,48 +204,39 @@ def login_in_browser(auth_url: str, proxy: str) -> tuple[str, str, str]:
 
         driver = web_driver(service=web_service(webdriver_path), options=options, seleniumwire_options=proxy_options)
 
-    driver.get(auth_url)
+        driver.get(auth_url)
 
-    time.sleep(random.randint(7, 15))
+        time.sleep(random.randint(7, 15))
 
-    try:
-        skip_button = driver.find_element(By.XPATH, '//*[@id="app"]/div[2]/button')
-        if skip_button:
-            skip_button.click()
-            time.sleep(random.randint(2, 5))
-    except:
-        ...
+        try:
+            skip_button = driver.find_element(By.XPATH, '//*[@id="app"]/div[2]/button')
+            if skip_button:
+                skip_button.click()
+                time.sleep(random.randint(2, 5))
+        except:
+            ...
 
-    try:
-        coin = driver.find_element(By.XPATH, '//*[@id="ex1-layer"]')
-        if coin:
-            coin.click()
-    except:
-        ...
+        try:
+            coin = driver.find_element(By.XPATH, '//*[@id="ex1-layer"]')
+            if coin:
+                coin.click()
+        except:
+            ...
 
-    time.sleep(5)
+        time.sleep(5)
 
-    response_text = '{}'
-    x_cv = '631'
-    x_touch = '1'
+        response_text = '{}'
+        x_cv = '651'
+        x_touch = '1'
 
-    for request in driver.requests:
-        request_body = request.body.decode('utf-8')
-        if request.url == "https://api.tapswap.ai/api/account/login" and 'chr' in request_body:
-            response_text = request.response.body.decode('utf-8')
+        for request in driver.requests:
+            request_body = request.body.decode('utf-8')
+            if request.url == "https://api.tapswap.club/api/account/challenge" and 'chr' in request_body:
+                response_text = request.response.body.decode('utf-8')
 
-        if request.url == "https://api.tapswap.ai/api/player/submit_taps":
-            headers = dict(request.headers.items())
-            x_cv = headers.get('X-Cv') or headers.get('x-cv')
-            x_touch = headers.get('X-Touch', '') or headers.get('x-touch', '')
-
-    session_queue.put(1)
-
-    if len(get_session_names()) == session_queue.qsize():
-        logger.info("All sessions are closed. Quitting driver...")
-        driver.quit()
-        driver = None
-        while session_queue.qsize() > 0:
-            session_queue.get()
+            if request.url == "https://api.tapswap.club/api/player/submit_taps":
+                headers = dict(request.headers.items())
+                x_cv = headers.get('X-Cv') or headers.get('x-cv')
+                x_touch = headers.get('X-Touch', '') or headers.get('x-touch', '')
 
     return response_text, x_cv, x_touch

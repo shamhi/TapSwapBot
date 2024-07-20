@@ -67,7 +67,7 @@ class Tapper:
                 bot=peer,
                 platform='android',
                 from_bot_menu=False,
-                url='https://app.tapswap.ai/'
+                url='https://app.tapswap.club/'
             ))
 
             auth_url = web_view.url.replace('tgWebAppVersion=6.7', 'tgWebAppVersion=7.2')
@@ -111,7 +111,7 @@ class Tapper:
     async def apply_boost(self, http_client: aiohttp.ClientSession, boost_type: str) -> bool:
         response_text = ''
         try:
-            response = await http_client.post(url='https://api.tapswap.ai/api/player/apply_boost',
+            response = await http_client.post(url='https://api.tapswap.club/api/player/apply_boost',
                                               json={'type': boost_type})
             response_text = await response.text()
             response.raise_for_status()
@@ -127,7 +127,7 @@ class Tapper:
     async def upgrade_boost(self, http_client: aiohttp.ClientSession, boost_type: str) -> bool:
         response_text = ''
         try:
-            response = await http_client.post(url='https://api.tapswap.ai/api/player/upgrade',
+            response = await http_client.post(url='https://api.tapswap.club/api/player/upgrade',
                                               json={'type': boost_type})
             response_text = await response.text()
             response.raise_for_status()
@@ -143,7 +143,7 @@ class Tapper:
     async def claim_reward(self, http_client: aiohttp.ClientSession, task_id: str) -> bool:
         response_text = ''
         try:
-            response = await http_client.post(url='https://api.tapswap.ai/api/player/claim_reward',
+            response = await http_client.post(url='https://api.tapswap.club/api/player/claim_reward',
                                               json={'task_id': task_id})
             response_text = await response.text()
             response.raise_for_status()
@@ -166,7 +166,7 @@ class Tapper:
 
             http_client.headers['Content-Id'] = str(content_id)
 
-            response = await http_client.post(url='https://api.tapswap.ai/api/player/submit_taps', json=json_data)
+            response = await http_client.post(url='https://api.tapswap.club/api/player/submit_taps', json=json_data)
             response_text = await response.text()
             response.raise_for_status()
 
@@ -201,6 +201,9 @@ class Tapper:
 
         auth_url = await self.get_auth_url(proxy=proxy)
 
+        if not auth_url:
+            return
+
         while True:
             try:
                 if http_client.closed:
@@ -212,7 +215,9 @@ class Tapper:
                     http_client = aiohttp.ClientSession(headers=headers, connector=proxy_conn)
 
                 if time() - access_token_created_time >= 1800:
-                    profile_data, access_token = await self.login(http_client=http_client, auth_url=auth_url, proxy=proxy)
+                    profile_data, access_token = await self.login(http_client=http_client,
+                                                                  auth_url=auth_url,
+                                                                  proxy=proxy)
 
                     if not access_token:
                         continue
