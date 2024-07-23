@@ -112,7 +112,8 @@ class Tapper:
         response_text = ''
         try:
             response = await http_client.post(url='https://api.tapswap.club/api/player/apply_boost',
-                                              json={'type': boost_type})
+                                              json={'type': boost_type},
+                                              ssl=False)
             response_text = await response.text()
             response.raise_for_status()
 
@@ -128,7 +129,8 @@ class Tapper:
         response_text = ''
         try:
             response = await http_client.post(url='https://api.tapswap.club/api/player/upgrade',
-                                              json={'type': boost_type})
+                                              json={'type': boost_type},
+                                              ssl=False)
             response_text = await response.text()
             response.raise_for_status()
 
@@ -144,7 +146,8 @@ class Tapper:
         response_text = ''
         try:
             response = await http_client.post(url='https://api.tapswap.club/api/player/claim_reward',
-                                              json={'task_id': task_id})
+                                              json={'task_id': task_id},
+                                              ssl=False)
             response_text = await response.text()
             response.raise_for_status()
 
@@ -166,7 +169,9 @@ class Tapper:
 
             http_client.headers['Content-Id'] = str(content_id)
 
-            response = await http_client.post(url='https://api.tapswap.club/api/player/submit_taps', json=json_data)
+            response = await http_client.post(url='https://api.tapswap.club/api/player/submit_taps', 
+                                              json=json_data,
+                                              ssl=False)
             response_text = await response.text()
             response.raise_for_status()
 
@@ -181,7 +186,7 @@ class Tapper:
 
     async def check_proxy(self, http_client: aiohttp.ClientSession, proxy: Proxy) -> None:
         try:
-            response = await http_client.get(url='https://httpbin.org/ip', timeout=aiohttp.ClientTimeout(5))
+            response = await http_client.get(url='https://httpbin.org/ip', timeout=aiohttp.ClientTimeout(5), ssl=False)
             ip = (await response.json()).get('origin')
             logger.info(f"{self.session_name} | Proxy IP: {ip}")
         except Exception as error:
