@@ -16,7 +16,7 @@ from bot.utils import logger
 from bot.utils.scripts import escape_html, login_in_browser
 from bot.exceptions import InvalidSession
 from .headers import headers
-
+from .geoip import *
 
 class Tapper:
     def __init__(self, tg_client: Client, lock: asyncio.Lock):
@@ -183,7 +183,8 @@ class Tapper:
         try:
             response = await http_client.get(url='https://httpbin.org/ip', timeout=aiohttp.ClientTimeout(5))
             ip = (await response.json()).get('origin')
-            logger.info(f"{self.session_name} | Proxy IP: {ip}")
+            geo_info = get_geo_info(ip)
+            logger.info(f"{self.session_name} | Proxy IP: {ip} - {geo_info.get('city')}, {geo_info.get('country')}")
         except Exception as error:
             logger.error(f"{self.session_name} | Proxy: {proxy} | Error: {escape_html(error)}")
 
@@ -393,3 +394,11 @@ async def run_tapper(tg_client: Client, proxy: str | None, lock: asyncio.Lock):
         await Tapper(tg_client=tg_client, lock=lock).run(proxy=proxy)
     except InvalidSession:
         logger.error(f"{tg_client.name} | Invalid Session")
+
+def run_tapper_(tg_client: list, proxy: str | None, lock: asyncio.Lock, settings):
+    _tg_client = Client(
+        name=tg_client[0],
+        api_id=tg_client[1],
+        api_hash=tg_client[2],
+        session_string=tg_client[3])
+    return asyncio.run(run_tapper(tg_client=_tg_client, proxy=proxy, lock=lock, settings=settings))
