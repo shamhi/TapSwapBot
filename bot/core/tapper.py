@@ -16,7 +16,7 @@ from bot.utils import logger
 from bot.utils.scripts import escape_html, login_in_browser
 from bot.exceptions import InvalidSession
 from .headers import headers
-
+from .geoip import *
 
 class Tapper:
     def __init__(self, tg_client: Client, lock: asyncio.Lock):
@@ -183,7 +183,8 @@ class Tapper:
         try:
             response = await http_client.get(url='https://httpbin.org/ip', timeout=aiohttp.ClientTimeout(5))
             ip = (await response.json()).get('origin')
-            logger.info(f"{self.session_name} | Proxy IP: {ip}")
+            geo_info = get_geo_info(ip)
+            logger.info(f"{self.session_name} | Proxy IP: {ip} - {geo_info.get('city')}, {geo_info.get('country')}")
         except Exception as error:
             logger.error(f"{self.session_name} | Proxy: {proxy} | Error: {escape_html(error)}")
 
