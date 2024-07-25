@@ -394,11 +394,3 @@ async def run_tapper(tg_client: Client, proxy: str | None, lock: asyncio.Lock):
         await Tapper(tg_client=tg_client, lock=lock).run(proxy=proxy)
     except InvalidSession:
         logger.error(f"{tg_client.name} | Invalid Session")
-
-def run_tapper_(tg_client: list, proxy: str | None, lock: asyncio.Lock, settings):
-    _tg_client = Client(
-        name=tg_client[0],
-        api_id=tg_client[1],
-        api_hash=tg_client[2],
-        session_string=tg_client[3])
-    return asyncio.run(run_tapper(tg_client=_tg_client, proxy=proxy, lock=lock, settings=settings))
